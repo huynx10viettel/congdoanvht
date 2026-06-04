@@ -1,0 +1,18 @@
+# Cấu hình deploy tự động cho Render (https://render.com)
+# Khi kết nối repo, Render sẽ tự đọc file này để tạo Web Service miễn phí.
+services:
+  - type: web
+    name: congdoanvht
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: TARGET_FOLDER
+        value: PhucLoiCongDoan
+      # Các biến Microsoft Graph điền sau trong Render > Environment (KHÔNG commit secret vào code):
+      # - key: TENANT_ID
+      # - key: CLIENT_ID
+      # - key: CLIENT_SECRET
+      # - key: GRAPH_DRIVE_ID
