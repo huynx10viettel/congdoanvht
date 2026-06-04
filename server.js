@@ -5,20 +5,21 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { fillDocx } from "./src/docxFiller.js";
-import { imagesToPdf } from "./src/imagesToPdf.js";
-import { soThanhChu, chuanHoaTien, dinhDangTien } from "./src/soThanhChu.js";
+import { fillDocx } from "./docxFiller.js";
+import { imagesToPdf } from "./imagesToPdf.js";
+import { soThanhChu, chuanHoaTien, dinhDangTien } from "./soThanhChu.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH =
-  process.env.TEMPLATE_PATH || path.join(__dirname, "templates", "mau-don-phuc-loi.docx");
+  process.env.TEMPLATE_PATH || path.join(__dirname, "mau-don-phuc-loi.docx");
 
 // Chế độ chạy thử cục bộ: nếu chưa cấu hình Graph, lưu file ra thư mục ./output
 const GRAPH_CONFIGURED =
   process.env.TENANT_ID && process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.GRAPH_DRIVE_ID;
 
 const app = express();
-app.use(express.static(path.join(__dirname, "public")));
+// Phục vụ trang form (index.html nằm cùng thư mục, mọi CSS/JS đã nhúng sẵn bên trong)
+app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -95,7 +96,7 @@ app.post("/api/submit", upload.array("images", 20), async (req, res) => {
     }
 
     // 3) Convert PDF + lưu OneDrive/SharePoint qua Microsoft Graph
-    const { luuHoSo } = await import("./src/graph.js");
+    const { luuHoSo } = await import("./graph.js");
     const result = await luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffer });
 
     res.json({ ok: true, mode: "graph", message: "Đã nộp và lưu hồ sơ thành công.", ...result });
