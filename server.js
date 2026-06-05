@@ -15,7 +15,10 @@ const TEMPLATE_PATH =
 
 // Chế độ chạy thử cục bộ: nếu chưa cấu hình Graph, lưu file ra thư mục ./output
 const GRAPH_CONFIGURED =
-  process.env.TENANT_ID && process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.GRAPH_DRIVE_ID;
+  process.env.TENANT_ID &&
+  process.env.CLIENT_ID &&
+  process.env.CLIENT_SECRET &&
+  (process.env.GRAPH_DRIVE_ID || process.env.GRAPH_SITE_URL);
 
 const app = express();
 // Phục vụ trang form (index.html nằm cùng thư mục, mọi CSS/JS đã nhúng sẵn bên trong)
