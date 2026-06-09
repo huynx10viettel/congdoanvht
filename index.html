@@ -471,21 +471,8 @@
 
         <div class="field-group">
           <label class="field-label">Chức danh <span class="req">*</span></label>
-          <div class="field-select-wrap">
-            <select class="field-select" id="chuc_danh" name="chuc_danh">
-              <option value="" disabled selected>Chọn chức danh</option>
-              <option>Nhân viên</option>
-              <option>Chuyên viên</option>
-              <option>Chuyên viên cao cấp</option>
-              <option>Kỹ sư</option>
-              <option>Kỹ sư cao cấp</option>
-              <option>Trưởng nhóm</option>
-              <option>Phó Trưởng phòng</option>
-              <option>Trưởng phòng</option>
-              <option>Phó Giám đốc trung tâm</option>
-              <option>Giám đốc trung tâm</option>
-            </select>
-          </div>
+          <input class="field-input" id="chuc_danh" name="chuc_danh"
+            placeholder="Nhập chức danh" />
         </div>
 
         <div class="field-group">
@@ -579,19 +566,6 @@
           </div>
         </div>
 
-        <!-- Ghi chú (3 ô dưới chân ký) -->
-        <div class="field-group">
-          <label class="field-label">Ghi chú (dưới chân ký)</label>
-          <div style="display:flex; gap:8px;">
-            <input class="field-input" id="ghi_chu_1" name="ghi_chu_1"
-              placeholder="1." style="flex:1" />
-            <input class="field-input" id="ghi_chu_2" name="ghi_chu_2"
-              placeholder="2." style="flex:1" />
-            <input class="field-input" id="ghi_chu_3" name="ghi_chu_3"
-              placeholder="3." style="flex:1" />
-          </div>
-        </div>
-
         <!-- Upload file / ảnh -->
         <div class="field-group">
           <label class="field-label">Tài liệu / ảnh đính kèm</label>
@@ -681,11 +655,13 @@
     const donVi = getDonViValue();
     const msg   = document.getElementById('msg1');
 
-    if (!tenNV) return showMsg(msg, 'Vui lòng nhập họ và tên.');
-    if (!maNV)  return showMsg(msg, 'Vui lòng nhập mã số nhân viên.');
+    const chucDanh = document.getElementById('chuc_danh').value.trim();
+    if (!tenNV)    return showMsg(msg, 'Vui lòng nhập họ và tên.');
+    if (!maNV)     return showMsg(msg, 'Vui lòng nhập mã số nhân viên.');
     if (!/^\d{6}$/.test(maNV)) return showMsg(msg, 'Mã số nhân viên phải gồm đúng 6 chữ số.');
-    if (!donVi) return showMsg(msg, 'Vui lòng chọn (hoặc nhập) đơn vị.');
-    if (!loai)  return showMsg(msg, 'Vui lòng chọn loại phúc lợi.');
+    if (!chucDanh) return showMsg(msg, 'Vui lòng nhập chức danh.');
+    if (!donVi)    return showMsg(msg, 'Vui lòng chọn (hoặc nhập) đơn vị.');
+    if (!loai)     return showMsg(msg, 'Vui lòng chọn loại phúc lợi.');
 
     msg.className = 'msg';
     document.getElementById('money-info-box').style.display = 'block';
@@ -742,11 +718,9 @@
 
   // ─── Submit ──────────────────────────────────────────────────────────────────
   async function submitForm() {
-    const chucDanh = document.getElementById('chuc_danh').value;
+    const chucDanh = document.getElementById('chuc_danh').value.trim();
     const loai     = document.getElementById('loai_phuc_loi').value;
     const msg      = document.getElementById('msg2');
-
-    if (!chucDanh) return showMsg(msg, 'Vui lòng chọn chức danh.');
 
     // Validate dynamic required fields
     if ((loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan')) {
@@ -780,9 +754,9 @@
       fd.append('so_giay_ket_hon',   (document.getElementById('so_giay_ket_hon')?.value   || '').trim());
       fd.append('ten_con',           (document.getElementById('ten_con')?.value           || '').trim());
       fd.append('so_giay_khai_sinh', (document.getElementById('so_giay_khai_sinh')?.value || '').trim());
-      fd.append('ghi_chu_1', (document.getElementById('ghi_chu_1')?.value || '').trim());
-      fd.append('ghi_chu_2', (document.getElementById('ghi_chu_2')?.value || '').trim());
-      fd.append('ghi_chu_3', (document.getElementById('ghi_chu_3')?.value || '').trim());
+      fd.append('ghi_chu_1', '');
+      fd.append('ghi_chu_2', '');
+      fd.append('ghi_chu_3', '');
       // Date
       const now = new Date();
       fd.append('ngay',  String(now.getDate()));
@@ -797,8 +771,10 @@
       if (data.success) {
         document.getElementById('success-msg').textContent = 'Hồ sơ đã được lưu vào SharePoint thành công.';
         const linkEl = document.getElementById('success-link');
-        linkEl.innerHTML = data.webUrl
-          ? `<a href="${data.webUrl}" target="_blank">→ Mở thư mục trên SharePoint</a>` : '';
+        let links = '';
+        if (data.webUrl)   links += `<a href="${data.webUrl}"   target="_blank">→ Mở thư mục trên SharePoint</a>`;
+        if (data.pdfWebUrl) links += `<br><a href="${data.pdfWebUrl}" target="_blank">→ Tải file PDF (có chú thích)</a>`;
+        linkEl.innerHTML = links;
         showScreen('screen-success');
       } else {
         showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
@@ -813,16 +789,16 @@
 
   // ─── Reset ───────────────────────────────────────────────────────────────────
   function resetForm() {
-    ['ten_cbcnv','ma_nv','don_vi_khac',
+    ['ten_cbcnv','ma_nv','don_vi_khac','chuc_danh',
      'ten_nguoi_than','ngay_ra_vien','ngay_cuoi',
-     'so_giay_ket_hon','ten_con','so_giay_khai_sinh',
-     'ghi_chu_1','ghi_chu_2','ghi_chu_3'].forEach(id => {
+     'so_giay_ket_hon','ten_con','so_giay_khai_sinh'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    ['don_vi','loai_phuc_loi','chuc_danh'].forEach(id => {
+    ['don_vi','loai_phuc_loi'].forEach(id => {
       document.getElementById(id).selectedIndex = 0;
     });
+    document.getElementById('chuc_danh').value = '';
     document.getElementById('don_vi_khac').style.display = 'none';
     document.getElementById('money-info-box').style.display = 'none';
     ['group-om','group-ket-hon','group-sinh-con'].forEach(id => {
