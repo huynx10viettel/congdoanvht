@@ -1,44 +1,34 @@
-// Gộp nhiều ảnh (JPG/PNG) thành 1 file PDF bằng pdf-lib (mã nguồn mở).
-// Mỗi ảnh là 1 trang A4, căn giữa, giữ tỉ lệ.
-import { PDFDocument } from "pdf-lib";
-
-const A4 = { width: 595.28, height: 841.89 }; // điểm (points), khổ A4 dọc
-const MARGIN = 28; // ~1cm
+import { PDFDocument } from 'pdf-lib';
 
 /**
- * @param {{buffer: Buffer, mimetype: string}[]} images danh sách ảnh
- * @returns {Promise<Buffer>} buffer PDF
+ * Merge uploaded files (images + PDFs) into a single PDF buffer.
+ * Images (jpeg/png) are embedded as full pages.
+ * PDFs are merged page-by-page.
  */
-export async function imagesToPdf(images) {
-  const pdf = await PDFDocument.create();
+export async function imagesToPdf(files) {
+  const merged = await PDFDocument.create();
 
-  for (const img of images) {
-    let embedded;
-    if (img.mimetype === "image/png") {
-      embedded = await pdf.embedPng(img.buffer);
-    } else if (img.mimetype === "image/jpeg" || img.mimetype === "image/jpg") {
-      embedded = await pdf.embedJpg(img.buffer);
-    } else {
-      // Bỏ qua định dạng không hỗ trợ
-      continue;
+  for (const file of files) {
+    const { buffer, mimetype } = file;
+
+    if (mimetype === 'application/pdf') {
+      // Copy all pages from the uploaded PDF
+      const srcDoc = await PDFDocument.load(buffer);
+      const pages  = await merged.copyPages(srcDoc, srcDoc.getPageIndices());
+      pages.forEach(p => merged.addPage(p));
+
+    } else if (mimetype === 'image/jpeg' || mimetype === 'image/jpg') {
+      const img  = await merged.embedJpg(buffer);
+      const page = merged.addPage([img.width, img.height]);
+      page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+
+    } else if (mimetype === 'image/png') {
+      const img  = await merged.embedPng(buffer);
+      const page = merged.addPage([img.width, img.height]);
+      page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
     }
-
-    const page = pdf.addPage([A4.width, A4.height]);
-    const maxW = A4.width - MARGIN * 2;
-    const maxH = A4.height - MARGIN * 2;
-
-    const scale = Math.min(maxW / embedded.width, maxH / embedded.height, 1);
-    const w = embedded.width * scale;
-    const h = embedded.height * scale;
-
-    page.drawImage(embedded, {
-      x: (A4.width - w) / 2,
-      y: (A4.height - h) / 2,
-      width: w,
-      height: h,
-    });
+    // Skip unsupported types silently
   }
 
-  const bytes = await pdf.save();
-  return Buffer.from(bytes);
+  return Buffer.from(await merged.save());
 }

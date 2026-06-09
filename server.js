@@ -16,7 +16,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Template map theo loai_phuc_loi
 // ──────────────────────────────────────────────
 const TEMPLATE_MAP = {
-  'tham-hoi-om':         'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
+  'tham-hoi-om-cbnv':    'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
+  'tham-hoi-om-thannhan':'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
   'ket-hon':             'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
   'sinh-con':            'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
   'tham-vieng-cbcnv':    'De nghi thanh toan tien cong doan, phuc loi_temp_CBNVtutran.docx',
@@ -39,16 +40,24 @@ app.use(express.static(__dirname));
 app.post('/api/submit', upload.array('images'), async (req, res) => {
   try {
     const {
-      nguoi_de_nghi,
       chuc_vu_de_nghi,
       ten_cbcnv,
       ma_nv,
       chuc_danh,
       don_vi,
       loai_phuc_loi,
+      ten_nguoi_than,
+      ngay_ra_vien,
+      ngay_cuoi,
+      so_giay_ket_hon,
+      ten_con,
+      so_giay_khai_sinh,
     } = req.body;
 
-    if (!nguoi_de_nghi || !ten_cbcnv || !ma_nv || !loai_phuc_loi) {
+    // nguoi_de_nghi falls back to chuc_vu_de_nghi
+    const nguoi_de_nghi = req.body.nguoi_de_nghi || chuc_vu_de_nghi || '';
+
+    if (!ten_cbcnv || !ma_nv || !loai_phuc_loi) {
       return res.status(400).json({ error: 'Thiếu thông tin bắt buộc.' });
     }
 
@@ -66,15 +75,21 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
 
     const data = {
       nguoi_de_nghi,
-      chuc_vu_de_nghi: chuc_vu_de_nghi || '',
+      chuc_vu_de_nghi:   chuc_vu_de_nghi   || '',
       ten_cbcnv,
       ma_nv,
-      chuc_danh:  chuc_danh  || '',
-      don_vi:     don_vi     || '',
+      chuc_danh:         chuc_danh         || '',
+      don_vi:            don_vi            || '',
       ngay,
       thang,
       nam,
-      su_kien: SU_KIEN_LABEL[loai_phuc_loi] || '',
+      su_kien:           SU_KIEN_LABEL[loai_phuc_loi] || '',
+      ten_nguoi_than:    ten_nguoi_than    || '',
+      ngay_ra_vien:      ngay_ra_vien      || '',
+      ngay_cuoi:         ngay_cuoi         || '',
+      so_giay_ket_hon:   so_giay_ket_hon   || '',
+      ten_con:           ten_con           || '',
+      so_giay_khai_sinh: so_giay_khai_sinh || '',
     };
 
     // Fill docx
