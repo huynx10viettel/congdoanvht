@@ -579,6 +579,19 @@
           </div>
         </div>
 
+        <!-- Ghi chú (3 ô dưới chân ký) -->
+        <div class="field-group">
+          <label class="field-label">Ghi chú (dưới chân ký)</label>
+          <div style="display:flex; gap:8px;">
+            <input class="field-input" id="ghi_chu_1" name="ghi_chu_1"
+              placeholder="1." style="flex:1" />
+            <input class="field-input" id="ghi_chu_2" name="ghi_chu_2"
+              placeholder="2." style="flex:1" />
+            <input class="field-input" id="ghi_chu_3" name="ghi_chu_3"
+              placeholder="3." style="flex:1" />
+          </div>
+        </div>
+
         <!-- Upload file / ảnh -->
         <div class="field-group">
           <label class="field-label">Tài liệu / ảnh đính kèm</label>
@@ -767,6 +780,9 @@
       fd.append('so_giay_ket_hon',   (document.getElementById('so_giay_ket_hon')?.value   || '').trim());
       fd.append('ten_con',           (document.getElementById('ten_con')?.value           || '').trim());
       fd.append('so_giay_khai_sinh', (document.getElementById('so_giay_khai_sinh')?.value || '').trim());
+      fd.append('ghi_chu_1', (document.getElementById('ghi_chu_1')?.value || '').trim());
+      fd.append('ghi_chu_2', (document.getElementById('ghi_chu_2')?.value || '').trim());
+      fd.append('ghi_chu_3', (document.getElementById('ghi_chu_3')?.value || '').trim());
       // Date
       const now = new Date();
       fd.append('ngay',  String(now.getDate()));
@@ -799,7 +815,8 @@
   function resetForm() {
     ['ten_cbcnv','ma_nv','don_vi_khac',
      'ten_nguoi_than','ngay_ra_vien','ngay_cuoi',
-     'so_giay_ket_hon','ten_con','so_giay_khai_sinh'].forEach(id => {
+     'so_giay_ket_hon','ten_con','so_giay_khai_sinh',
+     'ghi_chu_1','ghi_chu_2','ghi_chu_3'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });

@@ -52,6 +52,9 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       so_giay_ket_hon,
       ten_con,
       so_giay_khai_sinh,
+      ghi_chu_1,
+      ghi_chu_2,
+      ghi_chu_3,
     } = req.body;
 
     // nguoi_de_nghi falls back to chuc_vu_de_nghi
@@ -90,6 +93,9 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       so_giay_ket_hon:   so_giay_ket_hon   || '',
       ten_con:           ten_con           || '',
       so_giay_khai_sinh: so_giay_khai_sinh || '',
+      ghi_chu_1:         ghi_chu_1         || '',
+      ghi_chu_2:         ghi_chu_2         || '',
+      ghi_chu_3:         ghi_chu_3         || '',
     };
 
     // Fill docx
