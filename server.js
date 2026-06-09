@@ -1,119 +1,178 @@
-import "dotenv/config";
-import express from "express";
-import multer from "multer";
-import path from "node:path";
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import Docxtemplater from 'docxtemplater';
+import PizZip from 'pizzip';
+import { PDFDocument } from 'pdf-lib';
+import { ClientSecretCredential } from '@azure/identity';
+import { Client } from '@microsoft/microsoft-graph-client';
+import { TokenCredentialAuthenticationProvider } from '@microsoft/microsoft-graph-client/authProviders/azureTokenCredentials/index.js';
+import { soThanhChu } from './soThanhChu.js';
 
-import { fillDocx } from "./docxFiller.js";
-import { imagesToPdf } from "./imagesToPdf.js";
-import { soThanhChu, chuanHoaTien, dinhDangTien } from "./soThanhChu.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH =
-  process.env.TEMPLATE_PATH || path.join(__dirname, "mau-don-phuc-loi.docx");
-
-// Chế độ chạy thử cục bộ: nếu chưa cấu hình Graph, lưu file ra thư mục ./output
-const GRAPH_CONFIGURED =
-  process.env.TENANT_ID &&
-  process.env.CLIENT_ID &&
-  process.env.CLIENT_SECRET &&
-  (process.env.GRAPH_DRIVE_ID || process.env.GRAPH_SITE_URL);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
-// Phục vụ trang form (index.html nằm cùng thư mục, mọi CSS/JS đã nhúng sẵn bên trong)
-app.get("/", (_req, res) => res.sendFile(path.join(__dirname, "index.html")));
+const upload = multer({ storage: multer.memoryStorage() });
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024, files: 20 }, // tối đa 10MB/ảnh, 20 ảnh
-});
+// ──────────────────────────────────────────────
+// Template map based on loai_phuc_loi
+// ──────────────────────────────────────────────
+const TEMPLATE_MAP = {
+  'tham-hoi-om':            'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
+  'ket-hon':                'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
+  'sinh-con':               'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
+  'tham-vieng-cbcnv':       'De nghi thanh toan tien cong doan, phuc loi_temp_CBNVtutran.docx',
+  'tham-vieng-thannhan':    'De nghi thanh toan tien cong doan, phuc loi_temp_thannhanCBNVtutran.docx',
+};
 
-const slug = (s) =>
-  (s || "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D")
-    .replace(/[^a-zA-Z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
+// su_kien label for chúc mừng template
+const SU_KIEN_LABEL = {
+  'ket-hon': 'kết hôn',
+  'sinh-con': 'sinh con',
+};
 
-app.post("/api/submit", upload.array("images", 20), async (req, res) => {
+// ──────────────────────────────────────────────
+// Microsoft Graph client
+// ──────────────────────────────────────────────
+function getGraphClient() {
+  const credential = new ClientSecretCredential(
+    process.env.TENANT_ID,
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET
+  );
+  const authProvider = new TokenCredentialAuthenticationProvider(credential, {
+    scopes: ['https://graph.microsoft.com/.default'],
+  });
+  return Client.initWithMiddleware({ authProvider });
+}
+
+// ──────────────────────────────────────────────
+// Fill docx template with docxtemplater
+// ──────────────────────────────────────────────
+function fillDocx(templatePath, data) {
+  const content = fs.readFileSync(templatePath, 'binary');
+  const zip = new PizZip(content);
+  const doc = new Docxtemplater(zip, {
+    paragraphLoop: true,
+    linebreaks: true,
+  });
+  doc.render(data);
+  return doc.getZip().generate({ type: 'nodebuffer', compression: 'DEFLATE' });
+}
+
+// ──────────────────────────────────────────────
+// Convert uploaded images to PDF
+// ──────────────────────────────────────────────
+async function imagesToPdf(imageBuffers) {
+  const pdfDoc = await PDFDocument.create();
+  for (const buf of imageBuffers) {
+    let img;
+    // Detect PNG or JPEG by magic bytes
+    if (buf[0] === 0x89 && buf[1] === 0x50) {
+      img = await pdfDoc.embedPng(buf);
+    } else {
+      img = await pdfDoc.embedJpg(buf);
+    }
+    const page = pdfDoc.addPage([img.width, img.height]);
+    page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+  }
+  return pdfDoc.save();
+}
+
+// ──────────────────────────────────────────────
+// Upload files to SharePoint via Graph API
+// ──────────────────────────────────────────────
+async function luuHoSo(ten_cbcnv, ma_nv, ngay, thang, nam, docxBuffer, pdfBuffer) {
+  const client = getGraphClient();
+  const driveId = process.env.DRIVE_ID;
+  const folder = `Shared Documents/PhucLoiCongDoan`;
+  const baseName = `${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}`;
+
+  await client
+    .api(`/drives/${driveId}/root:/${folder}/${baseName}.docx:/content`)
+    .put(docxBuffer);
+
+  if (pdfBuffer) {
+    await client
+      .api(`/drives/${driveId}/root:/${folder}/${baseName}_chungtu.pdf:/content`)
+      .put(pdfBuffer);
+  }
+}
+
+// ──────────────────────────────────────────────
+// Static files
+// ──────────────────────────────────────────────
+app.use(express.static(__dirname));
+
+// ──────────────────────────────────────────────
+// POST /api/submit
+// ──────────────────────────────────────────────
+app.post('/api/submit', upload.array('images'), async (req, res) => {
   try {
-    const f = req.body;
-    const now = new Date();
+    const {
+      nguoi_de_nghi,
+      chuc_vu_de_nghi,
+      ten_cbcnv,
+      ma_nv,
+      chuc_danh,
+      don_vi,
+      loai_phuc_loi,
+    } = req.body;
 
-    // Tính tiền + đọc số thành chữ (server tự tính tổng, người dùng chỉ nhập số)
-    const tienPL = chuanHoaTien(f.tien_phuc_loi);
-    const tienCD = chuanHoaTien(f.tien_cong_doan);
-    const tong = tienPL + tienCD;
-
-    // Chuẩn hóa dữ liệu cho template (key trùng placeholder trong .docx)
-    const data = {
-      nguoi_de_nghi: f.nguoi_de_nghi || "",
-      chuc_vu_de_nghi: f.chuc_vu_de_nghi || "",
-      tien_phuc_loi: dinhDangTien(tienPL),
-      tien_phuc_loi_chu: soThanhChu(tienPL),
-      tien_cong_doan: dinhDangTien(tienCD),
-      tien_cong_doan_chu: soThanhChu(tienCD),
-      tong_cong: dinhDangTien(tong),
-      tong_cong_chu: soThanhChu(tong),
-      noi_dung_chi: f.noi_dung_chi || "",
-      ten_cbcnv: f.ten_cbcnv || "",
-      ma_nv: f.ma_nv || "",
-      chuc_danh: f.chuc_danh || "",
-      don_vi: f.don_vi || "",
-      ngay: f.ngay || String(now.getDate()),
-      thang: f.thang || String(now.getMonth() + 1),
-      nam: f.nam || String(now.getFullYear()),
-    };
-
-    if (!data.nguoi_de_nghi) return res.status(400).json({ ok: false, error: "Thiếu họ tên người đề nghị" });
-
-    // 1) Điền template Word
-    const docxBuffer = fillDocx(TEMPLATE_PATH, data);
-
-    // 2) Gộp ảnh thành PDF
-    const images = (req.files || []).map((x) => ({ buffer: x.buffer, mimetype: x.mimetype }));
-    const imagesPdfBuffer = images.length ? await imagesToPdf(images) : null;
-
-    const folderName = `${slug(data.nguoi_de_nghi)}-${now
-      .toISOString()
-      .slice(0, 10)}-${Date.now().toString().slice(-4)}`;
-    const docxName = `Giay-de-nghi-chi-${slug(data.nguoi_de_nghi)}.docx`;
-
-    if (!GRAPH_CONFIGURED) {
-      // Chế độ thử cục bộ: lưu ra ./output (không convert PDF vì Graph làm việc đó)
-      const outDir = path.join(__dirname, "output", folderName);
-      fs.mkdirSync(outDir, { recursive: true });
-      fs.writeFileSync(path.join(outDir, docxName), docxBuffer);
-      if (imagesPdfBuffer) fs.writeFileSync(path.join(outDir, "anh-dinh-kem.pdf"), imagesPdfBuffer);
-      return res.json({
-        ok: true,
-        mode: "local",
-        message: "Đã lưu cục bộ (chưa cấu hình Microsoft Graph nên chưa convert PDF/lưu OneDrive).",
-        folder: outDir,
-        files: [docxName, imagesPdfBuffer ? "anh-dinh-kem.pdf" : null].filter(Boolean),
-      });
+    // Validate required fields
+    if (!nguoi_de_nghi || !ten_cbcnv || !ma_nv || !loai_phuc_loi) {
+      return res.status(400).json({ error: 'Thiếu thông tin bắt buộc.' });
     }
 
-    // 3) Convert PDF + lưu OneDrive/SharePoint qua Microsoft Graph
-    const { luuHoSo } = await import("./graph.js");
-    const result = await luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffer });
+    // Date
+    const now = new Date();
+    const ngay  = String(now.getDate()).padStart(2, '0');
+    const thang = String(now.getMonth() + 1).padStart(2, '0');
+    const nam   = String(now.getFullYear());
 
-    res.json({ ok: true, mode: "graph", message: "Đã nộp và lưu hồ sơ thành công.", ...result });
+    // Pick template
+    const templateFile = TEMPLATE_MAP[loai_phuc_loi];
+    if (!templateFile) {
+      return res.status(400).json({ error: 'Loại phúc lợi không hợp lệ.' });
+    }
+    const templatePath = path.join(__dirname, templateFile);
+
+    // Build template data
+    const data = {
+      nguoi_de_nghi,
+      chuc_vu_de_nghi: chuc_vu_de_nghi || '',
+      ten_cbcnv,
+      ma_nv,
+      chuc_danh:  chuc_danh  || '',
+      don_vi:     don_vi     || '',
+      ngay,
+      thang,
+      nam,
+      su_kien: SU_KIEN_LABEL[loai_phuc_loi] || '',
+    };
+
+    // Fill docx
+    const docxBuffer = fillDocx(templatePath, data);
+
+    // Convert images to PDF (if any)
+    let pdfBuffer = null;
+    if (req.files && req.files.length > 0) {
+      const imageBuffers = req.files.map(f => f.buffer);
+      pdfBuffer = await imagesToPdf(imageBuffers);
+    }
+
+    // Upload to SharePoint
+    await luuHoSo(ten_cbcnv, ma_nv, ngay, thang, nam, docxBuffer, pdfBuffer);
+
+    res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: String(err.message || err) });
+    console.error('Submit error:', err);
+    res.status(500).json({ error: 'Có lỗi xảy ra. Vui lòng thử lại.' });
   }
 });
 
-app.get("/api/health", (_req, res) =>
-  res.json({ ok: true, graph: !!GRAPH_CONFIGURED, template: fs.existsSync(TEMPLATE_PATH) })
-);
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server chạy tại http://localhost:${PORT}  (Graph: ${GRAPH_CONFIGURED ? "ON" : "OFF - chế độ thử cục bộ"})`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
