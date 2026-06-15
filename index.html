@@ -524,16 +524,19 @@
 
         <!-- Thăm hỏi ốm (CBNV hoặc thân nhân) -->
         <div id="group-om" style="display:none">
-          <div class="section-label">Thông tin thăm hỏi</div>
-          <div class="field-group" style="margin-top:8px">
-            <label class="field-label">Tên người thân / bệnh nhân <span class="req">*</span></label>
-            <input class="field-input" id="ten_nguoi_than" name="ten_nguoi_than"
-              placeholder="Họ tên người bệnh" />
+          <!-- Chỉ hiện cho thăm hỏi thân nhân ốm -->
+          <div id="group-om-thannhan" style="display:none">
+            <div class="section-label">Thông tin thăm hỏi</div>
+            <div class="field-group" style="margin-top:8px">
+              <label class="field-label">Tên người thân / bệnh nhân <span class="req">*</span></label>
+              <input class="field-input" id="ten_nguoi_than" name="ten_nguoi_than"
+                placeholder="Họ tên người bệnh" />
+            </div>
           </div>
           <div class="field-group">
-            <label class="field-label">Ngày ra viện (dự kiến)</label>
-            <input class="field-input" id="ngay_ra_vien" name="ngay_ra_vien"
-              type="date" />
+            <label class="field-label">Bệnh viện <span class="req">*</span></label>
+            <input class="field-input" id="benh_vien" name="benh_vien"
+              placeholder="Tên bệnh viện đang điều trị" />
           </div>
         </div>
 
@@ -548,6 +551,16 @@
             <label class="field-label">Số giấy đăng ký kết hôn</label>
             <input class="field-input" id="so_giay_ket_hon" name="so_giay_ket_hon"
               placeholder="Nhập số giấy đăng ký kết hôn" />
+          </div>
+        </div>
+
+        <!-- Thăm viếng thân nhân qua đời -->
+        <div id="group-thamvieng-thannhan" style="display:none">
+          <div class="section-label">Thông tin thân nhân</div>
+          <div class="field-group" style="margin-top:8px">
+            <label class="field-label">Tên thân nhân <span class="req">*</span></label>
+            <input class="field-input" id="ten_than_nhan" name="ten_than_nhan"
+              placeholder="Họ tên người qua đời" />
           </div>
         </div>
 
@@ -639,12 +652,17 @@
 
   // ─── Show/hide dynamic fields ────────────────────────────────────────────────
   function updateDynamicFields(loai) {
-    const om      = document.getElementById('group-om');
-    const ketHon  = document.getElementById('group-ket-hon');
-    const sinhCon = document.getElementById('group-sinh-con');
-    om.style.display      = (loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan') ? 'block' : 'none';
-    ketHon.style.display  = loai === 'ket-hon'  ? 'block' : 'none';
-    sinhCon.style.display = loai === 'sinh-con' ? 'block' : 'none';
+    const om         = document.getElementById('group-om');
+    const omThannhan = document.getElementById('group-om-thannhan');
+    const ketHon     = document.getElementById('group-ket-hon');
+    const sinhCon    = document.getElementById('group-sinh-con');
+    const tvThannhan = document.getElementById('group-thamvieng-thannhan');
+    const isOm = (loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan');
+    om.style.display            = isOm ? 'block' : 'none';
+    omThannhan.style.display    = loai === 'tham-hoi-om-thannhan' ? 'block' : 'none';
+    tvThannhan.style.display    = loai === 'tham-vieng-thannhan'  ? 'block' : 'none';
+    ketHon.style.display        = loai === 'ket-hon'  ? 'block' : 'none';
+    sinhCon.style.display       = loai === 'sinh-con' ? 'block' : 'none';
   }
 
   // ─── Step 2 ──────────────────────────────────────────────────────────────────
@@ -723,9 +741,17 @@
     const msg      = document.getElementById('msg2');
 
     // Validate dynamic required fields
-    if ((loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan')) {
+    if (loai === 'tham-hoi-om-thannhan') {
       const ten = document.getElementById('ten_nguoi_than').value.trim();
       if (!ten) return showMsg(msg, 'Vui lòng nhập tên người thân / bệnh nhân.');
+    }
+    if (loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan') {
+      const bv = document.getElementById('benh_vien').value.trim();
+      if (!bv) return showMsg(msg, 'Vui lòng nhập tên bệnh viện.');
+    }
+    if (loai === 'tham-vieng-thannhan') {
+      const tn = document.getElementById('ten_than_nhan').value.trim();
+      if (!tn) return showMsg(msg, 'Vui lòng nhập tên thân nhân.');
     }
     if (loai === 'ket-hon' && !document.getElementById('ngay_cuoi').value) {
       return showMsg(msg, 'Vui lòng nhập ngày cưới.');
@@ -748,8 +774,10 @@
       fd.append('nguoi_de_nghi',   '');
       fd.append('chuc_danh',       chucDanh);
       // Dynamic fields
-      fd.append('ten_nguoi_than',    (document.getElementById('ten_nguoi_than')?.value    || '').trim());
-      fd.append('ngay_ra_vien',      document.getElementById('ngay_ra_vien')?.value       || '');
+      // ten_nguoi_than dùng chung cho: thân nhân ốm + thân nhân qua đời
+      const _tenNguoiThan = (document.getElementById('ten_nguoi_than')?.value || document.getElementById('ten_than_nhan')?.value || '').trim();
+      fd.append('ten_nguoi_than', _tenNguoiThan);
+      fd.append('benh_vien',         (document.getElementById('benh_vien')?.value         || '').trim());
       fd.append('ngay_cuoi',         document.getElementById('ngay_cuoi')?.value          || '');
       fd.append('so_giay_ket_hon',   (document.getElementById('so_giay_ket_hon')?.value   || '').trim());
       fd.append('ten_con',           (document.getElementById('ten_con')?.value           || '').trim());
@@ -790,7 +818,7 @@
   // ─── Reset ───────────────────────────────────────────────────────────────────
   function resetForm() {
     ['ten_cbcnv','ma_nv','don_vi_khac','chuc_danh',
-     'ten_nguoi_than','ngay_ra_vien','ngay_cuoi',
+     'ten_nguoi_than','ten_than_nhan','benh_vien','ngay_cuoi',
      'so_giay_ket_hon','ten_con','so_giay_khai_sinh'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
@@ -801,7 +829,7 @@
     document.getElementById('chuc_danh').value = '';
     document.getElementById('don_vi_khac').style.display = 'none';
     document.getElementById('money-info-box').style.display = 'none';
-    ['group-om','group-ket-hon','group-sinh-con'].forEach(id => {
+    ['group-om','group-om-thannhan','group-thamvieng-thannhan','group-ket-hon','group-sinh-con'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
     uploadedFiles = [];
