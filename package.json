@@ -1,5 +1,15 @@
 {
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
-    "exceljs": "^4.4.0"
+    "@azure/msal-node": "^2.16.2",
+    "docxtemplater": "^3.53.0",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "multer": "^1.4.5-lts.1",
+    "pdf-lib": "^1.17.1",
+    "pizzip": "^3.1.7"
   }
 }
