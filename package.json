@@ -1,24 +1,5 @@
 {
-  "name": "phuc-loi-cong-doan",
-  "version": "1.0.0",
-  "description": "Web quản lý yêu cầu phúc lợi công đoàn: điền form + ảnh -> điền Word template -> PDF -> lưu OneDrive/SharePoint",
-  "type": "module",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
-  },
-  "engines": {
-    "node": ">=18"
-  },
   "dependencies": {
-    "@azure/msal-node": "^2.16.2",
-    "docxtemplater": "^3.50.0",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "multer": "^1.4.5-lts.1",
-    "pdf-lib": "^1.17.1",
-    "pizzip": "^3.1.7",
-    "undici": "^6.19.8"
+    "exceljs": "^4.4.0"
   }
 }

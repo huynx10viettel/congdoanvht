@@ -107,6 +107,47 @@ export async function convertDocxToPdf(driveId, itemId) {
 }
 
 // ──────────────────────────────────────────────
+// timHoSo — Tra cứu hồ sơ theo mã nhân viên
+// Tìm folder có tên dạng: TenNV_maNV_ngay-thang-nam
+// Trả về mảng { tenNV, maNV, ngayNop, webUrl }
+// ──────────────────────────────────────────────
+export async function timHoSo(maNV) {
+  const token = await getToken();
+  // Liệt kê children của root, lọc theo tên chứa _maNV_
+  const url = `${BASE}/drives/${DRIVE_ID}/root/children?$select=name,webUrl,folder,createdDateTime&$top=200`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Graph list failed ${res.status}: ${text}`);
+  }
+
+  const data = await res.json();
+  const pattern = new RegExp(`_${maNV}_`);
+
+  return (data.value || [])
+    .filter(item => item.folder && pattern.test(item.name))
+    .map(item => {
+      // Tách tên folder: TenNV_maNV_ngay-thang-nam
+      const parts = item.name.split('_');
+      const tenNV = parts.slice(0, parts.length - 2).join('_');
+      const date  = parts[parts.length - 1]; // "dd-mm-yyyy"
+      return {
+        tenNV,
+        maNV,
+        ngayNop: date,    // "15-06-2026"
+        tenFolder: item.name,
+        webUrl: item.webUrl,
+        createdDateTime: item.createdDateTime,
+      };
+    })
+    .sort((a, b) => new Date(b.createdDateTime) - new Date(a.createdDateTime));
+}
+
+// ──────────────────────────────────────────────
 // uploadPdf — Upload file PDF đã annotate
 // ──────────────────────────────────────────────
 export async function uploadPdf({ folderName, pdfBuffer, pdfName }) {
@@ -117,4 +158,92 @@ export async function uploadPdf({ folderName, pdfBuffer, pdfName }) {
     contentType: 'application/pdf',
   });
   return { webUrl: result.webUrl };
+}
+
+// ──────────────────────────────────────────────
+// uploadJson — Upload JSON metadata vào folder
+// ──────────────────────────────────────────────
+export async function uploadJson({ folderName, data, filename = 'meta.json' }) {
+  await uploadBuffer({
+    folderPath:  folderName,
+    filename,
+    buffer:      Buffer.from(JSON.stringify(data, null, 2)),
+    contentType: 'application/json',
+  });
+}
+
+// ──────────────────────────────────────────────
+// readMetaFromFolder — Đọc meta.json từ folder
+// Trả về object hoặc null nếu không tìm thấy
+// ──────────────────────────────────────────────
+async function readMetaFromFolder(folderName) {
+  const token = await getToken();
+  const url = `${BASE}/drives/${DRIVE_ID}/root:/${folderName}/meta.json:/content`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  try {
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+// ──────────────────────────────────────────────
+// listSubmissionsByMonth — Liệt kê & đọc metadata
+// tất cả hồ sơ trong tháng/năm chỉ định.
+// Trả về mảng meta objects (có thể thiếu trường
+// nếu submission cũ không có meta.json)
+// ──────────────────────────────────────────────
+export async function listSubmissionsByMonth(thang, nam) {
+  const token = await getToken();
+  const url = `${BASE}/drives/${DRIVE_ID}/root/children?$select=name,webUrl,folder,createdDateTime&$top=500`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Graph list failed ${res.status}: ${text}`);
+  }
+
+  const body = await res.json();
+  const mm   = String(thang).padStart(2, '0');
+  const yyyy = String(nam);
+
+  // Lọc folder có ngày khớp tháng/năm: tên dạng TenNV_MaNV_dd-mm-yyyy
+  const matching = (body.value || []).filter(item => {
+    if (!item.folder) return false;
+    const parts = item.name.split('_');
+    if (parts.length < 3) return false;
+    const dateParts = parts[parts.length - 1].split('-');
+    return dateParts.length === 3 && dateParts[1] === mm && dateParts[2] === yyyy;
+  });
+
+  if (matching.length === 0) return [];
+
+  // Đọc meta.json từng folder song song
+  const submissions = await Promise.all(
+    matching.map(async folder => {
+      const meta = await readMetaFromFolder(folder.name);
+      if (meta) return meta;
+      // Fallback: tái tạo từ tên folder
+      const parts  = folder.name.split('_');
+      return {
+        ten_cbcnv:    parts.slice(0, parts.length - 2).join('_'),
+        ma_nv:        parts[parts.length - 2],
+        ngay_nop:     parts[parts.length - 1],
+        loai_phuc_loi: '',
+        don_vi:        '',
+        chuc_danh:     '',
+        qh_than_nhan:  '',
+        ten_nguoi_than:'',
+        benh_vien:     '',
+      };
+    })
+  );
+
+  return submissions.sort((a, b) => (a.ten_cbcnv || '').localeCompare(b.ten_cbcnv || '', 'vi'));
 }

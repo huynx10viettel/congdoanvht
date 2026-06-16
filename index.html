@@ -10,6 +10,7 @@
     :root {
       --primary: #ee0033;
       --primary-hover: #cc002b;
+      --primary-light: #ffedf1;
       --text-primary: #26292c;
       --text-secondary: #44494d;
       --text-placeholder: #a7aeb6;
@@ -17,233 +18,190 @@
       --input-bg-active: #ffffff;
       --input-border: #d0d8e0;
       --input-border-focus: #747a80;
-      --stepper-active: #26292c;
-      --stepper-inactive: #f2f4f7;
+      --bg-form: #f2f4f7;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Roboto', system-ui, -apple-system, sans-serif;
-      background: #ffffff;
+      background: white;
       min-height: 100vh;
+    }
+
+    /* ── Screen management ── */
+    .app { width: 100%; min-height: 100vh; }
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .form-screen.active {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 48px 16px 40px;
+      background: var(--bg-form);
+    }
+
+    /* ════════════════════════════════════════
+       WELCOME PAGE
+    ════════════════════════════════════════ */
+    .welcome-page {
+      min-height: 100vh;
+      background: white;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .w-header {
+      padding: 20px 160px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+    }
+    .vht-logo { display: flex; flex-direction: column; gap: 1px; }
+    .vht-logo img { height: 40px; width: auto; display: block; }
+    .vht-logo .logo-fallback { display: none; flex-direction: column; }
+    .vht-logo .lf-name { font-size: 22px; font-weight: 700; color: var(--primary); letter-spacing: -0.5px; line-height: 1; }
+    .vht-logo .lf-sub  { font-size: 8px; color: var(--text-secondary); letter-spacing: 1.5px; text-transform: uppercase; }
+
+    .btn-nav-lookup {
+      display: flex; align-items: center; gap: 8px;
+      height: 40px; padding: 0 20px;
+      background: transparent; color: var(--text-secondary);
+      border: 1px solid var(--input-border); border-radius: 999px;
+      font-size: 14px; font-family: inherit; cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    .btn-nav-lookup:hover { background: var(--input-bg); border-color: var(--input-border-focus); }
+
+    /* Hero */
+    .hero-section {
+      padding: 16px 160px 0;
+      display: grid;
+      grid-template-columns: 486px 1fr;
+      align-items: center;
       position: relative;
       overflow: hidden;
+      min-height: 260px;
     }
+    .hero-left { display: flex; flex-direction: column; gap: 16px; padding-bottom: 32px; z-index: 1; }
+    .hero-title { font-size: 32px; font-weight: 500; color: var(--text-primary); line-height: 44px; }
+    .hero-desc  { font-size: 18px; font-weight: 400; color: var(--text-primary); line-height: 28px; }
+    .hero-right { position: relative; height: 300px; overflow: hidden; }
+    .hero-right img { position: absolute; right: -20px; top: 0; height: 100%; width: auto; max-width: none; }
 
-    /* ===================== Background decoration ===================== */
-    .bg-decoration {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      z-index: 0;
-      overflow: hidden;
+    /* Cards */
+    .cards-section {
+      padding: 32px 160px 56px;
+      display: flex; flex-direction: column; gap: 24px; align-items: center;
     }
-    .bg-decoration::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse 60% 40% at 50% 80%, rgba(238,0,51,0.06) 0%, transparent 70%);
-    }
-    .bg-cityscape {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 60%;
-      opacity: 0.35;
-    }
+    .cards-title { font-size: 20px; font-weight: 500; color: var(--text-primary); line-height: 28px; }
 
-    /* ===================== App container ===================== */
-    .app {
-      position: relative;
-      z-index: 1;
+    .service-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
       width: 100%;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px 16px;
     }
-
-    /* ===================== Logo (top-left) ===================== */
-    .logo-topleft {
-      position: fixed;
-      top: 24px;
-      left: 32px;
-      z-index: 10;
-    }
-    .logo-topleft img { height: 36px; width: auto; display: block; }
-    .logo-topleft .logo-text {
-      display: flex;
-      flex-direction: column;
-    }
-    .logo-topleft .logo-viettel {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--primary);
-      line-height: 1;
-      letter-spacing: -0.5px;
-    }
-    .logo-topleft .logo-sub {
-      font-size: 9px;
-      font-weight: 400;
-      color: var(--text-secondary);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    /* ===================== Screen management ===================== */
-    .screen { display: none; width: 100%; justify-content: center; }
-    .screen.active { display: flex; }
-
-    /* ===================== Card ===================== */
-    .card {
-      background: #ffffff;
+    .svc-card {
+      background: white;
       border-radius: 24px;
-      box-shadow: 0 0 24px rgba(0,0,0,0.12);
-      width: 480px;
-      max-width: 100%;
+      box-shadow: 0 0 6px rgba(0,0,0,0.16);
       padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 24px;
+    }
+    .svc-icon {
+      width: 72px; height: 72px; border-radius: 999px;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .svc-body { width: 100%; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+    .svc-title { font-size: 20px; font-weight: 500; color: var(--text-primary); line-height: 28px; }
+    .svc-desc  { font-size: 18px; font-weight: 400; color: var(--text-secondary); line-height: 28px; }
+
+    .btn-svc {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      height: 40px; min-width: 96px; padding: 0 16px;
+      background: var(--primary); color: white;
+      border: none; border-radius: 999px;
+      font-size: 14px; font-weight: 500; font-family: inherit;
+      cursor: pointer; transition: background .15s; flex-shrink: 0;
+    }
+    .btn-svc:hover { background: var(--primary-hover); }
+
+    /* ════════════════════════════════════════
+       FORM CARD (Step screens)
+    ════════════════════════════════════════ */
+    .card {
+      background: #fff; border-radius: 24px;
+      box-shadow: 0 0 24px rgba(0,0,0,0.10);
+      width: 480px; max-width: 100%;
+      padding: 24px; display: flex; flex-direction: column; gap: 20px;
     }
 
-    /* ===================== Logo in card ===================== */
-    .card-logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+    .form-logo {
+      display: flex; align-items: center; gap: 8px;
     }
-    .card-logo img { height: 48px; width: auto; }
-    .card-logo .brand {
-      font-size: 22px;
-      font-weight: 700;
-      color: var(--primary);
-      letter-spacing: -0.5px;
-    }
-    .card-logo .brand-sub {
-      font-size: 10px;
-      color: var(--text-secondary);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
+    .form-logo img { height: 28px; }
+    .form-logo .fl-name { font-size: 15px; font-weight: 700; color: var(--primary); letter-spacing: -0.3px; }
+    .form-logo .fl-sub  { font-size: 7px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
 
-    /* ===================== Welcome screen ===================== */
-    .welcome-header {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
-    }
-    .welcome-header h1 {
-      font-size: 22px;
-      font-weight: 500;
-      color: var(--text-primary);
-      text-align: center;
-      line-height: 30px;
-    }
-    .welcome-body { display: flex; flex-direction: column; gap: 12px; }
-    .welcome-greeting { font-size: 22px; font-weight: 500; color: var(--text-primary); text-align: center; }
-    .welcome-desc { font-size: 14px; color: var(--text-primary); line-height: 20px; }
-    .welfare-list { display: flex; flex-direction: column; gap: 0; }
-    .welfare-list-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
-    .welfare-list ul { padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 0; }
-    .welfare-list ul li {
-      font-size: 14px;
-      color: var(--text-secondary);
-      line-height: 22px;
-      padding-left: 14px;
-      position: relative;
-    }
-    .welfare-list ul li::before { content: '•'; position: absolute; left: 0; color: var(--text-secondary); }
-
-    /* ===================== Card title ===================== */
     .card-title { font-size: 22px; font-weight: 500; color: var(--text-primary); line-height: 30px; }
 
-    /* ===================== Stepper ===================== */
-    .stepper { display: flex; align-items: center; gap: 0; }
+    /* Stepper */
+    .stepper { display: flex; align-items: center; }
     .step-item { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
     .step-dot {
       width: 20px; height: 20px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 12px; font-weight: 600; flex-shrink: 0;
     }
-    .step-dot.active  { background: var(--stepper-active); color: white; }
-    .step-dot.inactive{ background: var(--stepper-inactive); color: var(--text-secondary); }
-    .step-dot.done    { background: var(--stepper-active); color: white; }
+    .step-dot.active   { background: var(--text-primary); color: white; }
+    .step-dot.inactive { background: var(--input-bg); color: var(--text-secondary); }
+    .step-dot.done     { background: var(--text-primary); color: white; }
     .step-label { font-size: 12px; line-height: 18px; white-space: nowrap; }
     .step-label.active   { font-weight: 600; color: var(--text-secondary); }
     .step-label.inactive { font-weight: 400; color: var(--text-secondary); }
     .step-line { flex: 1; height: 1px; background: var(--input-border); margin: 0 4px; }
 
-    /* ===================== Form fields ===================== */
-    .form-fields { display: flex; flex-direction: column; gap: 0; }
+    /* Fields */
+    .form-fields { display: flex; flex-direction: column; }
     .field-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
     .field-group:last-child { margin-bottom: 0; }
     .field-label { display: flex; align-items: center; font-size: 15px; color: var(--text-primary); }
     .field-label .req { color: var(--primary); font-weight: 500; margin-left: 2px; }
 
-    .field-input,
-    .field-select,
-    .field-textarea {
-      width: 100%;
-      height: 48px;
-      padding: 0 12px;
-      border: 1px solid var(--input-border);
-      border-radius: 12px;
-      font-size: 15px;
-      font-family: inherit;
-      background: var(--input-bg);
-      color: var(--text-primary);
-      appearance: none;
-      -webkit-appearance: none;
-      outline: none;
-      transition: border-color 0.15s, background 0.15s;
+    .field-input, .field-select, .field-textarea {
+      width: 100%; height: 48px; padding: 0 12px;
+      border: 1px solid var(--input-border); border-radius: 12px;
+      font-size: 15px; font-family: inherit;
+      background: var(--input-bg); color: var(--text-primary);
+      appearance: none; -webkit-appearance: none; outline: none;
+      transition: border-color .15s, background .15s;
     }
-    .field-input::placeholder,
-    .field-select.empty,
-    .field-textarea::placeholder { color: var(--text-placeholder); }
-    .field-input:focus,
-    .field-select:focus,
-    .field-textarea:focus {
-      border-color: var(--input-border-focus);
-      background: var(--input-bg-active);
+    .field-input::placeholder, .field-textarea::placeholder { color: var(--text-placeholder); }
+    .field-input:focus, .field-select:focus, .field-textarea:focus {
+      border-color: var(--input-border-focus); background: var(--input-bg-active);
     }
     .field-input.invalid { border-color: var(--primary) !important; }
 
     .field-select-wrap { position: relative; }
     .field-select-wrap::after {
-      content: '';
-      position: absolute;
-      right: 14px; top: 50%;
-      transform: translateY(-50%);
+      content: ''; position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
       width: 0; height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-top: 6px solid var(--text-secondary);
-      pointer-events: none;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      border-top: 6px solid var(--text-secondary); pointer-events: none;
     }
-    .field-select { cursor: pointer; padding-right: 36px; height: 48px; }
-
+    .field-select { cursor: pointer; padding-right: 36px; }
     .field-textarea { height: auto; min-height: 72px; resize: vertical; padding: 10px 12px; }
     .field-hint { font-size: 12px; color: var(--text-placeholder); margin-top: 2px; }
 
-    /* ===================== Photo/file upload ===================== */
+    /* Upload */
     .upload-zone {
-      border: 2px dashed var(--input-border);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      color: var(--text-placeholder);
-      cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      background: var(--input-bg);
+      border: 2px dashed var(--input-border); border-radius: 12px;
+      padding: 16px; text-align: center; color: var(--text-placeholder);
+      cursor: pointer; transition: border-color .15s, background .15s; background: var(--input-bg);
     }
     .upload-zone:hover, .upload-zone.drag { border-color: var(--primary); background: #fff5f7; }
     .upload-zone p { font-size: 14px; line-height: 20px; }
@@ -252,178 +210,243 @@
     .thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     .thumb {
       position: relative; width: 64px; height: 64px;
-      border-radius: 8px; overflow: hidden;
-      border: 1px solid var(--input-border);
+      border-radius: 8px; overflow: hidden; border: 1px solid var(--input-border);
     }
     .thumb img { width: 100%; height: 100%; object-fit: cover; }
     .thumb button {
       position: absolute; top: 2px; right: 2px;
-      background: rgba(0,0,0,0.55); color: #fff;
-      border: none; border-radius: 50%;
-      width: 18px; height: 18px;
-      cursor: pointer; font-size: 11px; line-height: 1;
+      background: rgba(0,0,0,0.55); color: #fff; border: none; border-radius: 50%;
+      width: 18px; height: 18px; cursor: pointer; font-size: 11px; line-height: 1;
       display: flex; align-items: center; justify-content: center;
     }
-
     .file-chips { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
     .file-chip {
       display: flex; align-items: center; justify-content: space-between;
-      background: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 13px;
-      color: var(--text-secondary);
+      background: var(--input-bg); border: 1px solid var(--input-border);
+      border-radius: 8px; padding: 6px 10px; font-size: 13px; color: var(--text-secondary);
     }
     .file-chip button {
       background: none; border: none; cursor: pointer;
-      color: var(--text-placeholder); font-size: 16px; line-height: 1;
-      padding: 0 0 0 8px;
+      color: var(--text-placeholder); font-size: 16px; padding: 0 0 0 8px;
     }
 
-    /* ===================== Buttons ===================== */
+    /* Buttons */
     .btn-row { display: flex; gap: 12px; }
     .btn-primary {
-      width: 100%; height: 48px;
-      background: var(--primary); color: white;
+      width: 100%; height: 48px; background: var(--primary); color: white;
       border: none; border-radius: 999px;
       font-size: 15px; font-weight: 500; font-family: inherit;
-      cursor: pointer; transition: background 0.15s;
-      flex-shrink: 0;
+      cursor: pointer; transition: background .15s;
     }
     .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
-
+    .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
     .btn-secondary {
-      width: 100%; height: 48px;
-      background: white; color: var(--text-primary);
+      width: 100%; height: 48px; background: white; color: var(--text-primary);
       border: 1px solid var(--input-border); border-radius: 999px;
       font-size: 15px; font-weight: 500; font-family: inherit;
-      cursor: pointer; transition: background 0.15s, border-color 0.15s;
-      flex-shrink: 0;
+      cursor: pointer; transition: background .15s, border-color .15s;
     }
     .btn-secondary:hover { background: var(--input-bg); border-color: var(--input-border-focus); }
-    .btn-row .btn-primary,
-    .btn-row .btn-secondary { width: auto; flex: 1; }
+    .btn-row .btn-primary, .btn-row .btn-secondary { width: auto; flex: 1; }
 
-    /* ===================== Success screen ===================== */
+    /* Success */
     .success-content {
       display: flex; flex-direction: column; align-items: center;
-      gap: 12px; padding: 60px 24px; text-align: center; flex: 1;
+      gap: 12px; padding: 48px 24px; text-align: center;
     }
     .success-icon {
-      width: 100px; height: 100px; border-radius: 50%;
-      background: #e8f5e9;
-      display: flex; align-items: center; justify-content: center;
-      margin-bottom: 12px;
+      width: 100px; height: 100px; border-radius: 50%; background: #e8f5e9;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
     }
     .success-icon svg { width: 50px; height: 50px; }
     .success-title { font-size: 22px; font-weight: 500; color: var(--text-primary); }
     .success-desc  { font-size: 15px; color: var(--text-secondary); line-height: 22px; }
-    .success-link a { color: var(--primary); text-decoration: none; font-size: 14px; }
+    .success-link a { color: var(--primary); text-decoration: none; font-size: 14px; display: block; margin-top: 4px; }
 
-    /* ===================== Error / info message ===================== */
+    /* Misc */
     .msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; display: none; }
     .msg.error { display: block; background: #fdecea; color: #922; border: 1px solid #f5c6cb; }
     .msg.ok    { display: block; background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
-
-    .info-box {
-      background: var(--input-bg); border-radius: 12px;
-      padding: 10px 14px; font-size: 13px; color: var(--text-secondary);
-    }
-
-    /* ===================== Section divider ===================== */
+    .info-box { background: var(--input-bg); border-radius: 12px; padding: 10px 14px; font-size: 13px; color: var(--text-secondary); }
     .section-label {
       font-size: 12px; font-weight: 600; color: var(--text-placeholder);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 4px; margin-top: 4px;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; margin-top: 4px;
     }
 
-    @media (max-width: 520px) {
-      .card { padding: 18px 14px; }
-      .logo-topleft { top: 14px; left: 16px; }
+    /* Lookup */
+    .lookup-results { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .result-card {
+      border: 1px solid var(--input-border); border-radius: 12px;
+      padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+      background: var(--input-bg); text-decoration: none;
+      transition: border-color .15s, background .15s;
+    }
+    .result-card:hover { border-color: var(--primary); background: #fff5f7; }
+    .result-card .rc-name { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+    .result-card .rc-date { font-size: 12px; color: var(--text-placeholder); }
+    .result-card .rc-link { font-size: 12px; color: var(--primary); margin-top: 2px; }
+    .result-empty { font-size: 14px; color: var(--text-placeholder); text-align: center; padding: 20px 0; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      .w-header, .hero-section, .cards-section { padding-left: 48px; padding-right: 48px; }
+    }
+    @media (max-width: 960px) {
+      .service-cards { grid-template-columns: repeat(2, 1fr); }
+      .hero-section  { grid-template-columns: 1fr; }
+      .hero-right    { display: none; }
+    }
+    @media (max-width: 600px) {
+      .w-header, .hero-section, .cards-section { padding-left: 20px; padding-right: 20px; }
+      .service-cards { grid-template-columns: 1fr; }
+      .svc-title { font-size: 17px; }
+      .svc-desc  { font-size: 15px; }
+      .cards-section { padding-bottom: 32px; }
     }
   </style>
 </head>
 <body>
-
-<!-- Background -->
-<div class="bg-decoration">
-  <svg class="bg-cityscape" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax meet" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="300" width="40" height="300" fill="rgba(238,0,51,0.08)" rx="2"/>
-    <rect x="15" y="240" width="25" height="60" fill="rgba(238,0,51,0.08)" rx="2"/>
-    <rect x="45" y="350" width="35" height="250" fill="rgba(238,0,51,0.07)" rx="2"/>
-    <rect x="85" y="270" width="30" height="330" fill="rgba(238,0,51,0.06)" rx="2"/>
-    <rect x="120" y="320" width="45" height="280" fill="rgba(238,0,51,0.07)" rx="2"/>
-    <rect x="170" y="380" width="25" height="220" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="200" y="340" width="50" height="260" fill="rgba(238,0,51,0.06)" rx="2"/>
-    <rect x="255" y="400" width="30" height="200" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="290" y="360" width="20" height="240" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="315" y="420" width="40" height="180" fill="rgba(238,0,51,0.04)" rx="2"/>
-    <rect x="360" y="450" width="25" height="150" fill="rgba(238,0,51,0.03)" rx="2"/>
-    <rect x="1400" y="300" width="40" height="300" fill="rgba(238,0,51,0.08)" rx="2"/>
-    <rect x="1400" y="240" width="25" height="60" fill="rgba(238,0,51,0.08)" rx="2"/>
-    <rect x="1360" y="350" width="35" height="250" fill="rgba(238,0,51,0.07)" rx="2"/>
-    <rect x="1325" y="270" width="30" height="330" fill="rgba(238,0,51,0.06)" rx="2"/>
-    <rect x="1280" y="320" width="45" height="280" fill="rgba(238,0,51,0.07)" rx="2"/>
-    <rect x="1245" y="380" width="25" height="220" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="1190" y="340" width="50" height="260" fill="rgba(238,0,51,0.06)" rx="2"/>
-    <rect x="1155" y="400" width="30" height="200" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="1130" y="360" width="20" height="240" fill="rgba(238,0,51,0.05)" rx="2"/>
-    <rect x="1085" y="420" width="40" height="180" fill="rgba(238,0,51,0.04)" rx="2"/>
-    <rect x="1055" y="450" width="25" height="150" fill="rgba(238,0,51,0.03)" rx="2"/>
-  </svg>
-</div>
-
-<!-- Logo top-left -->
-<div class="logo-topleft" id="logo-topleft" style="display:none">
-  <img src="logo.svg" alt="Viettel High Tech"
-    onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-  <div class="logo-text" style="display:none">
-    <span class="logo-viettel">viettel</span>
-    <span class="logo-sub">high tech</span>
-  </div>
-</div>
-
 <div class="app">
 
-  <!-- ===== WELCOME SCREEN ===== -->
+  <!-- ═══════════════════════════════════════
+       WELCOME SCREEN
+  ═══════════════════════════════════════ -->
   <div id="screen-welcome" class="screen active">
-    <div class="card">
-      <div class="welcome-header">
-        <div class="card-logo">
+    <div class="welcome-page">
+
+      <!-- Header -->
+      <div class="w-header">
+        <div class="vht-logo">
           <img src="logo.svg" alt="Viettel High Tech"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
-          <div style="display:none;text-align:center">
-            <div class="brand">viettel</div>
-            <div class="brand-sub">high tech</div>
+            onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="logo-fallback">
+            <span class="lf-name">viettel</span>
+            <span class="lf-sub">high tech</span>
           </div>
         </div>
-        <h1>Công cụ hỗ trợ công đoàn</h1>
+        <button class="btn-nav-lookup" onclick="goToLookup()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="4.5" stroke="#44494d" stroke-width="1.5"/>
+            <path d="M11 11L14 14" stroke="#44494d" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+          Tra cứu hồ sơ
+        </button>
       </div>
 
-      <div class="welcome-body">
-        <p class="welcome-greeting">Xin chào đồng chí,</p>
-        <p class="welcome-desc">Vui lòng điền thông tin đầy đủ và chính xác để cán bộ công đoàn thực hiện trình đề nghị chi đến Công đoàn và TCT.</p>
-        <div class="welfare-list">
-          <p class="welfare-list-title">Các phúc lợi hỗ trợ:</p>
-          <ul>
-            <li>Thăm hỏi CBNV ốm</li>
-            <li>Thăm hỏi thân nhân CBNV ốm</li>
-            <li>Chúc mừng CBNV kết hôn, sinh con</li>
-            <li>Thăm viếng CBNV, thân nhân qua đời</li>
-            <li>Yêu cầu khác vui lòng liên hệ trực tiếp cán bộ công đoàn</li>
-          </ul>
+      <!-- Hero -->
+      <div class="hero-section">
+        <div class="hero-left">
+          <h1 class="hero-title">Công cụ hỗ trợ công đoàn</h1>
+          <p class="hero-desc">Tiếp nhận và hỗ trợ cán bộ công đoàn viên xử lý các yêu cầu phúc lợi công đoàn.</p>
+        </div>
+        <div class="hero-right">
+          <img src="hero.png" alt=""
+            onerror="this.parentElement.style.display='none'">
         </div>
       </div>
 
-      <button class="btn-primary" onclick="goToStep1()">Bắt đầu</button>
+      <!-- Service Cards -->
+      <div class="cards-section">
+        <h2 class="cards-title">Vui lòng lựa chọn loại hỗ trợ cần đăng ký</h2>
+        <div class="service-cards">
+
+          <!-- Card 1 -->
+          <div class="svc-card">
+            <div class="svc-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 35L6 21C3.6 18.6 3 15 4.5 12C6 9 9 7.2 12.3 7.2C14.9 7.2 17.3 8.4 19 10.4L20 11.7L21 10.4C22.7 8.4 25.1 7.2 27.7 7.2C31 7.2 34 9 35.5 12C37 15 36.4 18.6 34 21L20 35Z" fill="#EE0033"/>
+              </svg>
+            </div>
+            <div class="svc-body">
+              <h3 class="svc-title">Thăm hỏi CBNV và thân nhân ốm</h3>
+              <p class="svc-desc">Hỗ trợ thăm hỏi cán bộ nhân viên và thân nhân khi ốm đau, phải điều trị nội trú dài ngày</p>
+            </div>
+            <button class="btn-svc" onclick="goToStep1()">
+              Tạo yêu cầu
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10H16M12 6L16 10L12 14" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="svc-card">
+            <div class="svc-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 35L6 21C3.6 18.6 3 15 4.5 12C6 9 9 7.2 12.3 7.2C14.9 7.2 17.3 8.4 19 10.4L20 11.7L21 10.4C22.7 8.4 25.1 7.2 27.7 7.2C31 7.2 34 9 35.5 12C37 15 36.4 18.6 34 21L20 35Z" fill="#EE0033"/>
+              </svg>
+            </div>
+            <div class="svc-body">
+              <h3 class="svc-title">Thăm hỏi CBNV kết hôn, sinh con</h3>
+              <p class="svc-desc">Hỗ trợ chúc mừng cán bộ nhân viên khi kết hôn hoặc chào đón thành viên mới trong gia đình</p>
+            </div>
+            <button class="btn-svc" onclick="goToStep1()">
+              Tạo yêu cầu
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10H16M12 6L16 10L12 14" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="svc-card">
+            <div class="svc-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 35L6 21C3.6 18.6 3 15 4.5 12C6 9 9 7.2 12.3 7.2C14.9 7.2 17.3 8.4 19 10.4L20 11.7L21 10.4C22.7 8.4 25.1 7.2 27.7 7.2C31 7.2 34 9 35.5 12C37 15 36.4 18.6 34 21L20 35Z" fill="#EE0033"/>
+              </svg>
+            </div>
+            <div class="svc-body">
+              <h3 class="svc-title">Thăm viếng CBNV, thân nhân</h3>
+              <p class="svc-desc">Hỗ trợ thăm viếng cán bộ nhân viên hoặc thân nhân trong trường hợp từ trần.</p>
+            </div>
+            <button class="btn-svc" onclick="goToStep1()">
+              Tạo yêu cầu
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M4 10H16M12 6L16 10L12 14" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="svc-card">
+            <div class="svc-icon">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                <path d="M20 35L6 21C3.6 18.6 3 15 4.5 12C6 9 9 7.2 12.3 7.2C14.9 7.2 17.3 8.4 19 10.4L20 11.7L21 10.4C22.7 8.4 25.1 7.2 27.7 7.2C31 7.2 34 9 35.5 12C37 15 36.4 18.6 34 21L20 35Z" fill="#EE0033"/>
+              </svg>
+            </div>
+            <div class="svc-body">
+              <h3 class="svc-title">Các yêu cầu hỗ trợ khác</h3>
+              <p class="svc-desc">Các yêu cầu hỗ trợ khác đề nghị đồng chí liên hệ cán bộ phụ trách công đoàn bộ phận để được hướng dẫn, hỗ trợ.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align:center;padding:16px 0 24px;border-top:1px solid var(--input-border);margin-top:auto">
+        <button onclick="goToAdmin()" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--text-placeholder);font-family:inherit;padding:4px 8px;border-radius:6px;transition:color .15s" onmouseover="this.style.color='var(--text-secondary)'" onmouseout="this.style.color='var(--text-placeholder)'">
+          Cán bộ công đoàn
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <!-- ===== STEP 1: THÔNG TIN NHÂN VIÊN ===== -->
-  <div id="screen-step1" class="screen">
+  <!-- ═══════════════════════════════════════
+       STEP 1
+  ═══════════════════════════════════════ -->
+  <div id="screen-step1" class="screen form-screen">
     <div class="card">
+      <div class="form-logo">
+        <img src="logo.svg" alt="VHT"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none">
+          <div class="fl-name">viettel</div>
+          <div class="fl-sub">high tech</div>
+        </div>
+      </div>
+
       <h2 class="card-title">Tạo yêu cầu phúc lợi</h2>
 
       <div class="stepper">
@@ -441,44 +464,36 @@
       <div class="form-fields">
         <div class="field-group">
           <label class="field-label">Họ và tên <span class="req">*</span></label>
-          <input class="field-input" id="ten_cbcnv" name="ten_cbcnv"
-            placeholder="Nhập họ và tên đầy đủ" autocomplete="name" />
+          <input class="field-input" id="ten_cbcnv" placeholder="Nhập họ và tên đầy đủ" autocomplete="name" />
         </div>
-
         <div class="field-group">
           <label class="field-label">Mã số nhân viên <span class="req">*</span></label>
-          <input class="field-input" id="ma_nv" name="ma_nv"
-            placeholder="6 chữ số" maxlength="6" inputmode="numeric" />
+          <input class="field-input" id="ma_nv" placeholder="6 chữ số" maxlength="6" inputmode="numeric" />
           <span class="field-hint">Nhập đúng 6 chữ số</span>
         </div>
-
         <div class="field-group">
           <label class="field-label">Đơn vị <span class="req">*</span></label>
           <div class="field-select-wrap">
-            <select class="field-select" id="don_vi" name="don_vi" onchange="onDonViChange()">
+            <select class="field-select" id="don_vi" onchange="onDonViChange()">
               <option value="" disabled selected>Chọn phòng / trung tâm</option>
-              <option value="Trung tâm Camera">Trung tâm Camera</option>
-              <option value="Trung tâm IoT">Trung tâm IoT</option>
-              <option value="Trung tâm Kinh tế tầm thấp">Trung tâm Kinh tế tầm thấp</option>
+              <option>Trung tâm Camera</option>
+              <option>Trung tâm IoT</option>
+              <option>Trung tâm Kinh tế tầm thấp</option>
               <option value="Phòng Chất lượng &amp; Sản xuất">Phòng Chất lượng &amp; Sản xuất</option>
-              <option value="Phòng Kinh doanh">Phòng Kinh doanh</option>
+              <option>Phòng Kinh doanh</option>
               <option value="khac">Khác (nhập tên)</option>
             </select>
           </div>
-          <input class="field-input" id="don_vi_khac" placeholder="Nhập tên đơn vị"
-            style="display:none; margin-top:6px" />
+          <input class="field-input" id="don_vi_khac" placeholder="Nhập tên đơn vị" style="display:none;margin-top:6px" />
         </div>
-
         <div class="field-group">
           <label class="field-label">Chức danh <span class="req">*</span></label>
-          <input class="field-input" id="chuc_danh" name="chuc_danh"
-            placeholder="Nhập chức danh" />
+          <input class="field-input" id="chuc_danh" placeholder="Nhập chức danh" />
         </div>
-
         <div class="field-group">
           <label class="field-label">Loại phúc lợi <span class="req">*</span></label>
           <div class="field-select-wrap">
-            <select class="field-select" id="loai_phuc_loi" name="loai_phuc_loi">
+            <select class="field-select" id="loai_phuc_loi">
               <option value="" disabled selected>Chọn loại phúc lợi</option>
               <option value="tham-hoi-om-cbnv">Thăm hỏi CBNV ốm</option>
               <option value="tham-hoi-om-thannhan">Thăm hỏi thân nhân CBNV ốm</option>
@@ -492,13 +507,27 @@
       </div>
 
       <div id="msg1" class="msg"></div>
-      <button class="btn-primary" onclick="goToStep2()">Tiếp tục</button>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
+        <button class="btn-primary" onclick="goToStep2()">Tiếp tục</button>
+      </div>
     </div>
   </div>
 
-  <!-- ===== STEP 2: THÔNG TIN YÊU CẦU ===== -->
-  <div id="screen-step2" class="screen">
+  <!-- ═══════════════════════════════════════
+       STEP 2
+  ═══════════════════════════════════════ -->
+  <div id="screen-step2" class="screen form-screen">
     <div class="card">
+      <div class="form-logo">
+        <img src="logo.svg" alt="VHT"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none">
+          <div class="fl-name">viettel</div>
+          <div class="fl-sub">high tech</div>
+        </div>
+      </div>
+
       <h2 class="card-title">Tạo yêu cầu phúc lợi</h2>
 
       <div class="stepper">
@@ -513,30 +542,28 @@
         </div>
       </div>
 
-      <div class="form-fields" style="overflow-y:auto; max-height:500px; padding-right:4px;">
+      <div class="form-fields" style="overflow-y:auto;max-height:500px;padding-right:4px">
 
-        <!-- Số tiền info -->
-        <div class="info-box" id="money-info-box" style="display:none; margin-bottom:16px">
+        <div class="info-box" id="money-info-box" style="display:none;margin-bottom:16px">
           💰 Số tiền và nội dung chi đã được xác định theo loại phúc lợi đã chọn.
         </div>
 
-        <!-- ── Dynamic fields theo loại phúc lợi ── -->
-
-        <!-- Thăm hỏi ốm (CBNV hoặc thân nhân) -->
+        <!-- Thăm hỏi ốm -->
         <div id="group-om" style="display:none">
-          <!-- Chỉ hiện cho thăm hỏi thân nhân ốm -->
           <div id="group-om-thannhan" style="display:none">
-            <div class="section-label">Thông tin thăm hỏi</div>
+            <div class="section-label">Thông tin thăm hỏi thân nhân</div>
             <div class="field-group" style="margin-top:8px">
-              <label class="field-label">Tên người thân / bệnh nhân <span class="req">*</span></label>
-              <input class="field-input" id="ten_nguoi_than" name="ten_nguoi_than"
-                placeholder="Họ tên người bệnh" />
+              <label class="field-label">Quan hệ với CBNV <span class="req">*</span></label>
+              <input class="field-input" id="qh_than_nhan_om" placeholder="Vd: bố đẻ, mẹ đẻ, vợ, con" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">Họ tên người thân <span class="req">*</span></label>
+              <input class="field-input" id="ten_nguoi_than" placeholder="Họ tên người bệnh" />
             </div>
           </div>
           <div class="field-group">
             <label class="field-label">Bệnh viện <span class="req">*</span></label>
-            <input class="field-input" id="benh_vien" name="benh_vien"
-              placeholder="Tên bệnh viện đang điều trị" />
+            <input class="field-input" id="benh_vien" placeholder="Tên bệnh viện đang điều trị" />
           </div>
         </div>
 
@@ -545,22 +572,24 @@
           <div class="section-label">Thông tin kết hôn</div>
           <div class="field-group" style="margin-top:8px">
             <label class="field-label">Ngày cưới <span class="req">*</span></label>
-            <input class="field-input" id="ngay_cuoi" name="ngay_cuoi" type="date" />
+            <input class="field-input" id="ngay_cuoi" type="date" />
           </div>
           <div class="field-group">
             <label class="field-label">Số giấy đăng ký kết hôn</label>
-            <input class="field-input" id="so_giay_ket_hon" name="so_giay_ket_hon"
-              placeholder="Nhập số giấy đăng ký kết hôn" />
+            <input class="field-input" id="so_giay_ket_hon" placeholder="Nhập số giấy đăng ký kết hôn" />
           </div>
         </div>
 
-        <!-- Thăm viếng thân nhân qua đời -->
+        <!-- Thăm viếng thân nhân -->
         <div id="group-thamvieng-thannhan" style="display:none">
-          <div class="section-label">Thông tin thân nhân</div>
+          <div class="section-label">Thông tin thân nhân từ trần</div>
           <div class="field-group" style="margin-top:8px">
-            <label class="field-label">Tên thân nhân <span class="req">*</span></label>
-            <input class="field-input" id="ten_than_nhan" name="ten_than_nhan"
-              placeholder="Họ tên người qua đời" />
+            <label class="field-label">Quan hệ với CBNV <span class="req">*</span></label>
+            <input class="field-input" id="qh_than_nhan_tv" placeholder="Vd: bố đẻ, mẹ đẻ, vợ, con" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Họ tên thân nhân <span class="req">*</span></label>
+            <input class="field-input" id="ten_than_nhan" placeholder="Họ tên người qua đời" />
           </div>
         </div>
 
@@ -569,25 +598,22 @@
           <div class="section-label">Thông tin sinh con</div>
           <div class="field-group" style="margin-top:8px">
             <label class="field-label">Tên con / người thân</label>
-            <input class="field-input" id="ten_con" name="ten_con"
-              placeholder="Họ tên bé" />
+            <input class="field-input" id="ten_con" placeholder="Họ tên bé" />
           </div>
           <div class="field-group">
             <label class="field-label">Số giấy khai sinh</label>
-            <input class="field-input" id="so_giay_khai_sinh" name="so_giay_khai_sinh"
-              placeholder="Nhập số giấy khai sinh" />
+            <input class="field-input" id="so_giay_khai_sinh" placeholder="Nhập số giấy khai sinh" />
           </div>
         </div>
 
-        <!-- Upload file / ảnh -->
+        <!-- Upload -->
         <div class="field-group">
           <label class="field-label">Tài liệu / ảnh đính kèm</label>
           <div id="drop-zone" class="upload-zone">
             <p>📎 Bấm để chọn file hoặc kéo thả vào đây</p>
             <p class="hint">Ảnh JPG/PNG + PDF · Tối đa 20 file · Ảnh được gộp thành PDF</p>
           </div>
-          <input id="file-input" type="file"
-            accept="image/png,image/jpeg,application/pdf" multiple hidden />
+          <input id="file-input" type="file" accept="image/png,image/jpeg,application/pdf" multiple hidden />
           <div id="thumbs" class="thumbs"></div>
           <div id="file-chips" class="file-chips"></div>
         </div>
@@ -595,7 +621,6 @@
       </div>
 
       <div id="msg2" class="msg"></div>
-
       <div class="btn-row">
         <button class="btn-secondary" onclick="goToStep1()">Quay lại</button>
         <button class="btn-primary" id="btn-submit" onclick="submitForm()">Nộp đề nghị</button>
@@ -603,14 +628,16 @@
     </div>
   </div>
 
-  <!-- ===== SUCCESS SCREEN ===== -->
-  <div id="screen-success" class="screen">
+  <!-- ═══════════════════════════════════════
+       SUCCESS
+  ═══════════════════════════════════════ -->
+  <div id="screen-success" class="screen form-screen">
     <div class="card">
       <div class="success-content">
         <div class="success-icon">
-          <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="28" cy="28" r="28" fill="#4caf50" opacity="0.15"/>
-            <circle cx="28" cy="28" r="22" fill="#4caf50" opacity="0.25"/>
+          <svg viewBox="0 0 56 56" fill="none">
+            <circle cx="28" cy="28" r="28" fill="#4caf50" opacity=".15"/>
+            <circle cx="28" cy="28" r="22" fill="#4caf50" opacity=".25"/>
             <path d="M17 28.5L24 35.5L39 20.5" stroke="#2e7d32" stroke-width="3.5"
               stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -623,20 +650,140 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════
+       LOOKUP
+  ═══════════════════════════════════════ -->
+  <div id="screen-lookup" class="screen form-screen">
+    <div class="card">
+      <div class="form-logo">
+        <img src="logo.svg" alt="VHT"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none">
+          <div class="fl-name">viettel</div>
+          <div class="fl-sub">high tech</div>
+        </div>
+      </div>
+
+      <h2 class="card-title">Tra cứu hồ sơ</h2>
+      <p style="font-size:14px;color:var(--text-secondary);margin-top:-8px">
+        Nhập mã nhân viên để xem danh sách hồ sơ phúc lợi đã nộp.
+      </p>
+
+      <div class="form-fields">
+        <div class="field-group">
+          <label class="field-label">Mã số nhân viên <span class="req">*</span></label>
+          <input class="field-input" id="lookup-ma-nv" placeholder="6 chữ số"
+            maxlength="6" inputmode="numeric"
+            onkeydown="if(event.key==='Enter') doLookup()" />
+          <span class="field-hint">Nhập đúng 6 chữ số rồi bấm Tra cứu</span>
+        </div>
+      </div>
+
+      <div id="msg-lookup" class="msg"></div>
+      <div class="btn-row">
+        <button class="btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
+        <button class="btn-primary" id="btn-lookup" onclick="doLookup()">🔍 Tra cứu</button>
+      </div>
+
+      <div id="lookup-results-wrap" style="display:none">
+        <div class="section-label" style="margin-bottom:8px">Kết quả tra cứu</div>
+        <div id="lookup-results" class="lookup-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       ADMIN SCREEN
+  ═══════════════════════════════════════ -->
+  <div id="screen-admin" class="screen form-screen">
+    <div class="card">
+      <div class="form-logo">
+        <img src="logo.svg" alt="VHT"
+          onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+        <div style="display:none">
+          <div class="fl-name">viettel</div>
+          <div class="fl-sub">high tech</div>
+        </div>
+      </div>
+
+      <h2 class="card-title">Cán bộ công đoàn</h2>
+
+      <!-- Bước A: Nhập mã xác thực -->
+      <div id="admin-step-code">
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:-8px">
+          Nhập mã xác thực để truy cập chức năng kết xuất báo cáo.
+        </p>
+        <div class="form-fields" style="margin-top:12px">
+          <div class="field-group">
+            <label class="field-label">Mã xác thực <span class="req">*</span></label>
+            <input class="field-input" id="admin-code-input" type="password"
+              placeholder="Nhập mã xác thực"
+              onkeydown="if(event.key==='Enter') verifyAdminCode()" />
+          </div>
+        </div>
+        <div id="msg-admin-code" class="msg"></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
+          <button class="btn-primary" onclick="verifyAdminCode()">Xác nhận</button>
+        </div>
+      </div>
+
+      <!-- Bước B: Kết xuất (sau khi xác thực) -->
+      <div id="admin-step-export" style="display:none">
+        <p style="font-size:14px;color:var(--text-secondary);margin-top:-8px">
+          Chọn tháng/năm để kết xuất danh sách yêu cầu phúc lợi.
+        </p>
+        <div class="form-fields" style="margin-top:12px">
+          <div class="field-group">
+            <label class="field-label">Tháng <span class="req">*</span></label>
+            <div class="field-select-wrap">
+              <select class="field-select" id="admin-month">
+                <option value="" disabled selected>Chọn tháng</option>
+                <option value="01">Tháng 1</option>
+                <option value="02">Tháng 2</option>
+                <option value="03">Tháng 3</option>
+                <option value="04">Tháng 4</option>
+                <option value="05">Tháng 5</option>
+                <option value="06">Tháng 6</option>
+                <option value="07">Tháng 7</option>
+                <option value="08">Tháng 8</option>
+                <option value="09">Tháng 9</option>
+                <option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option>
+                <option value="12">Tháng 12</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Năm <span class="req">*</span></label>
+            <input class="field-input" id="admin-year" type="number"
+              value="2026" min="2024" max="2035" placeholder="YYYY" />
+          </div>
+        </div>
+        <div id="msg-admin-export" class="msg"></div>
+        <div class="btn-row" style="margin-top:16px">
+          <button class="btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
+          <button class="btn-primary" id="btn-export" onclick="doExport()">
+            📥 Tải Excel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- .app -->
 
 <script>
-  // ─── Navigation ─────────────────────────────────────────────────────────────
+  // ─── Navigation ──────────────────────────────────────────────────────────────
   function showScreen(id) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(id).classList.add('active');
-    document.getElementById('logo-topleft').style.display = id !== 'screen-welcome' ? 'block' : 'none';
     window.scrollTo(0, 0);
   }
 
   function goToStep1() { showScreen('screen-step1'); }
 
-  // ─── Đơn vị "Khác" ──────────────────────────────────────────────────────────
+  // ─── Đơn vị "Khác" ───────────────────────────────────────────────────────────
   function onDonViChange() {
     const sel = document.getElementById('don_vi');
     const inp = document.getElementById('don_vi_khac');
@@ -650,7 +797,7 @@
     return sel.value;
   }
 
-  // ─── Show/hide dynamic fields ────────────────────────────────────────────────
+  // ─── Dynamic fields ──────────────────────────────────────────────────────────
   function updateDynamicFields(loai) {
     const om         = document.getElementById('group-om');
     const omThannhan = document.getElementById('group-om-thannhan');
@@ -658,22 +805,22 @@
     const sinhCon    = document.getElementById('group-sinh-con');
     const tvThannhan = document.getElementById('group-thamvieng-thannhan');
     const isOm = (loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan');
-    om.style.display            = isOm ? 'block' : 'none';
-    omThannhan.style.display    = loai === 'tham-hoi-om-thannhan' ? 'block' : 'none';
-    tvThannhan.style.display    = loai === 'tham-vieng-thannhan'  ? 'block' : 'none';
-    ketHon.style.display        = loai === 'ket-hon'  ? 'block' : 'none';
-    sinhCon.style.display       = loai === 'sinh-con' ? 'block' : 'none';
+    om.style.display         = isOm ? 'block' : 'none';
+    omThannhan.style.display = loai === 'tham-hoi-om-thannhan' ? 'block' : 'none';
+    tvThannhan.style.display = loai === 'tham-vieng-thannhan'  ? 'block' : 'none';
+    ketHon.style.display     = loai === 'ket-hon'  ? 'block' : 'none';
+    sinhCon.style.display    = loai === 'sinh-con' ? 'block' : 'none';
   }
 
   // ─── Step 2 ──────────────────────────────────────────────────────────────────
   function goToStep2() {
-    const tenNV = document.getElementById('ten_cbcnv').value.trim();
-    const maNV  = document.getElementById('ma_nv').value.trim();
-    const loai  = document.getElementById('loai_phuc_loi').value;
-    const donVi = getDonViValue();
-    const msg   = document.getElementById('msg1');
-
+    const tenNV    = document.getElementById('ten_cbcnv').value.trim();
+    const maNV     = document.getElementById('ma_nv').value.trim();
+    const loai     = document.getElementById('loai_phuc_loi').value;
+    const donVi    = getDonViValue();
     const chucDanh = document.getElementById('chuc_danh').value.trim();
+    const msg      = document.getElementById('msg1');
+
     if (!tenNV)    return showMsg(msg, 'Vui lòng nhập họ và tên.');
     if (!maNV)     return showMsg(msg, 'Vui lòng nhập mã số nhân viên.');
     if (!/^\d{6}$/.test(maNV)) return showMsg(msg, 'Mã số nhân viên phải gồm đúng 6 chữ số.');
@@ -689,10 +836,10 @@
 
   // ─── File upload ─────────────────────────────────────────────────────────────
   let uploadedFiles = [];
-  const dropZone  = document.getElementById('drop-zone');
-  const fileInput  = document.getElementById('file-input');
-  const thumbsEl   = document.getElementById('thumbs');
-  const chipsEl    = document.getElementById('file-chips');
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const thumbsEl  = document.getElementById('thumbs');
+  const chipsEl   = document.getElementById('file-chips');
 
   dropZone.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', () => addFiles(fileInput.files));
@@ -722,13 +869,13 @@
         const d = document.createElement('div');
         d.className = 'thumb';
         d.innerHTML = `<img src="${url}"><button type="button">×</button>`;
-        d.querySelector('button').onclick = () => { uploadedFiles.splice(i, 1); renderFiles(); };
+        d.querySelector('button').onclick = () => { uploadedFiles.splice(i,1); renderFiles(); };
         thumbsEl.appendChild(d);
       } else {
         const chip = document.createElement('div');
         chip.className = 'file-chip';
         chip.innerHTML = `<span>📄 ${f.name}</span><button type="button">×</button>`;
-        chip.querySelector('button').onclick = () => { uploadedFiles.splice(i, 1); renderFiles(); };
+        chip.querySelector('button').onclick = () => { uploadedFiles.splice(i,1); renderFiles(); };
         chipsEl.appendChild(chip);
       }
     });
@@ -740,22 +887,24 @@
     const loai     = document.getElementById('loai_phuc_loi').value;
     const msg      = document.getElementById('msg2');
 
-    // Validate dynamic required fields
     if (loai === 'tham-hoi-om-thannhan') {
-      const ten = document.getElementById('ten_nguoi_than').value.trim();
-      if (!ten) return showMsg(msg, 'Vui lòng nhập tên người thân / bệnh nhân.');
+      if (!document.getElementById('qh_than_nhan_om').value.trim())
+        return showMsg(msg, 'Vui lòng nhập quan hệ thân nhân với CBNV.');
+      if (!document.getElementById('ten_nguoi_than').value.trim())
+        return showMsg(msg, 'Vui lòng nhập họ tên người thân / bệnh nhân.');
     }
     if (loai === 'tham-hoi-om-cbnv' || loai === 'tham-hoi-om-thannhan') {
-      const bv = document.getElementById('benh_vien').value.trim();
-      if (!bv) return showMsg(msg, 'Vui lòng nhập tên bệnh viện.');
+      if (!document.getElementById('benh_vien').value.trim())
+        return showMsg(msg, 'Vui lòng nhập tên bệnh viện.');
     }
     if (loai === 'tham-vieng-thannhan') {
-      const tn = document.getElementById('ten_than_nhan').value.trim();
-      if (!tn) return showMsg(msg, 'Vui lòng nhập tên thân nhân.');
+      if (!document.getElementById('qh_than_nhan_tv').value.trim())
+        return showMsg(msg, 'Vui lòng nhập quan hệ thân nhân với CBNV.');
+      if (!document.getElementById('ten_than_nhan').value.trim())
+        return showMsg(msg, 'Vui lòng nhập họ tên thân nhân.');
     }
-    if (loai === 'ket-hon' && !document.getElementById('ngay_cuoi').value) {
+    if (loai === 'ket-hon' && !document.getElementById('ngay_cuoi').value)
       return showMsg(msg, 'Vui lòng nhập ngày cưới.');
-    }
 
     msg.className = 'msg';
     const btn = document.getElementById('btn-submit');
@@ -764,33 +913,38 @@
 
     try {
       const fd = new FormData();
-      // Step 1
-      fd.append('ten_cbcnv',    document.getElementById('ten_cbcnv').value.trim());
-      fd.append('ma_nv',        document.getElementById('ma_nv').value.trim());
-      fd.append('don_vi',       getDonViValue());
-      fd.append('loai_phuc_loi', loai);
-      // Step 2
+      fd.append('ten_cbcnv',       document.getElementById('ten_cbcnv').value.trim());
+      fd.append('ma_nv',           document.getElementById('ma_nv').value.trim());
+      fd.append('don_vi',          getDonViValue());
+      fd.append('loai_phuc_loi',   loai);
       fd.append('chuc_vu_de_nghi', '');
       fd.append('nguoi_de_nghi',   '');
       fd.append('chuc_danh',       chucDanh);
-      // Dynamic fields
-      // ten_nguoi_than dùng chung cho: thân nhân ốm + thân nhân qua đời
-      const _tenNguoiThan = (document.getElementById('ten_nguoi_than')?.value || document.getElementById('ten_than_nhan')?.value || '').trim();
-      fd.append('ten_nguoi_than', _tenNguoiThan);
+
+      const _qhThanNhan = loai === 'tham-hoi-om-thannhan'
+        ? (document.getElementById('qh_than_nhan_om')?.value || '').trim()
+        : loai === 'tham-vieng-thannhan'
+        ? (document.getElementById('qh_than_nhan_tv')?.value || '').trim()
+        : '';
+      const _tenNguoiThan = loai === 'tham-hoi-om-thannhan'
+        ? (document.getElementById('ten_nguoi_than')?.value || '').trim()
+        : loai === 'tham-vieng-thannhan'
+        ? (document.getElementById('ten_than_nhan')?.value || '').trim()
+        : '';
+      fd.append('qh_than_nhan',      _qhThanNhan);
+      fd.append('ten_nguoi_than',    _tenNguoiThan);
       fd.append('benh_vien',         (document.getElementById('benh_vien')?.value         || '').trim());
-      fd.append('ngay_cuoi',         document.getElementById('ngay_cuoi')?.value          || '');
+      fd.append('ngay_cuoi',          document.getElementById('ngay_cuoi')?.value          || '');
       fd.append('so_giay_ket_hon',   (document.getElementById('so_giay_ket_hon')?.value   || '').trim());
       fd.append('ten_con',           (document.getElementById('ten_con')?.value           || '').trim());
       fd.append('so_giay_khai_sinh', (document.getElementById('so_giay_khai_sinh')?.value || '').trim());
       fd.append('ghi_chu_1', '');
       fd.append('ghi_chu_2', '');
       fd.append('ghi_chu_3', '');
-      // Date
       const now = new Date();
       fd.append('ngay',  String(now.getDate()));
       fd.append('thang', String(now.getMonth() + 1));
       fd.append('nam',   String(now.getFullYear()));
-      // Files
       uploadedFiles.forEach(f => fd.append('images', f));
 
       const res  = await fetch('/api/submit', { method: 'POST', body: fd });
@@ -800,8 +954,8 @@
         document.getElementById('success-msg').textContent = 'Hồ sơ đã được lưu vào SharePoint thành công.';
         const linkEl = document.getElementById('success-link');
         let links = '';
-        if (data.webUrl)   links += `<a href="${data.webUrl}"   target="_blank">→ Mở thư mục trên SharePoint</a>`;
-        if (data.pdfWebUrl) links += `<br><a href="${data.pdfWebUrl}" target="_blank">→ Tải file PDF (có chú thích)</a>`;
+        if (data.webUrl)    links += `<a href="${data.webUrl}"    target="_blank">→ Mở thư mục trên SharePoint</a>`;
+        if (data.pdfWebUrl) links += `<a href="${data.pdfWebUrl}" target="_blank">→ Tải file PDF (có chú thích)</a>`;
         linkEl.innerHTML = links;
         showScreen('screen-success');
       } else {
@@ -818,23 +972,162 @@
   // ─── Reset ───────────────────────────────────────────────────────────────────
   function resetForm() {
     ['ten_cbcnv','ma_nv','don_vi_khac','chuc_danh',
+     'qh_than_nhan_om','qh_than_nhan_tv',
      'ten_nguoi_than','ten_than_nhan','benh_vien','ngay_cuoi',
      'so_giay_ket_hon','ten_con','so_giay_khai_sinh'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });
-    ['don_vi','loai_phuc_loi'].forEach(id => {
-      document.getElementById(id).selectedIndex = 0;
-    });
-    document.getElementById('chuc_danh').value = '';
+    ['don_vi','loai_phuc_loi'].forEach(id => { document.getElementById(id).selectedIndex = 0; });
     document.getElementById('don_vi_khac').style.display = 'none';
     document.getElementById('money-info-box').style.display = 'none';
-    ['group-om','group-om-thannhan','group-thamvieng-thannhan','group-ket-hon','group-sinh-con'].forEach(id => {
-      document.getElementById(id).style.display = 'none';
-    });
+    ['group-om','group-om-thannhan','group-thamvieng-thannhan','group-ket-hon','group-sinh-con']
+      .forEach(id => { document.getElementById(id).style.display = 'none'; });
     uploadedFiles = [];
     renderFiles();
     showScreen('screen-welcome');
+  }
+
+  // ─── Lookup ──────────────────────────────────────────────────────────────────
+  function goToLookup() {
+    document.getElementById('lookup-ma-nv').value = '';
+    document.getElementById('lookup-results-wrap').style.display = 'none';
+    document.getElementById('lookup-results').innerHTML = '';
+    document.getElementById('msg-lookup').className = 'msg';
+    showScreen('screen-lookup');
+    setTimeout(() => document.getElementById('lookup-ma-nv').focus(), 100);
+  }
+
+  async function doLookup() {
+    const maNV = document.getElementById('lookup-ma-nv').value.trim();
+    const msg  = document.getElementById('msg-lookup');
+    const wrap = document.getElementById('lookup-results-wrap');
+    const list = document.getElementById('lookup-results');
+    const btn  = document.getElementById('btn-lookup');
+
+    if (!/^\d{6}$/.test(maNV)) return showMsg(msg, 'Mã nhân viên phải gồm đúng 6 chữ số.');
+
+    msg.className = 'msg';
+    wrap.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Đang tra cứu...';
+
+    try {
+      const res  = await fetch(`/api/lookup?ma_nv=${encodeURIComponent(maNV)}`);
+      const data = await res.json();
+
+      if (!data.success) return showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
+
+      list.innerHTML = '';
+      if (data.results.length === 0) {
+        list.innerHTML = '<p class="result-empty">Không tìm thấy hồ sơ nào cho mã nhân viên này.</p>';
+      } else {
+        data.results.forEach(r => {
+          const card = document.createElement('a');
+          card.className = 'result-card';
+          card.href = r.webUrl;
+          card.target = '_blank';
+          card.innerHTML = `
+            <span class="rc-name">📁 ${r.tenNV || r.tenFolder}</span>
+            <span class="rc-date">📅 Ngày nộp: ${r.ngayNop}</span>
+            <span class="rc-link">→ Mở thư mục trên SharePoint</span>
+          `;
+          list.appendChild(card);
+        });
+      }
+      wrap.style.display = 'block';
+    } catch (err) {
+      showMsg(msg, '❌ Lỗi kết nối: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🔍 Tra cứu';
+    }
+  }
+
+  // ─── Admin ───────────────────────────────────────────────────────────────────
+  let _adminCode = '';
+
+  function goToAdmin() {
+    document.getElementById('admin-code-input').value = '';
+    document.getElementById('admin-step-code').style.display   = 'block';
+    document.getElementById('admin-step-export').style.display = 'none';
+    document.getElementById('msg-admin-code').className = 'msg';
+    showScreen('screen-admin');
+    setTimeout(() => document.getElementById('admin-code-input').focus(), 100);
+  }
+
+  async function verifyAdminCode() {
+    const code = document.getElementById('admin-code-input').value.trim();
+    const msg  = document.getElementById('msg-admin-code');
+    if (!code) return showMsg(msg, 'Vui lòng nhập mã xác thực.');
+    try {
+      const res = await fetch('/api/admin/verify', {
+        headers: { 'X-Admin-Code': code },
+      });
+      if (res.ok) {
+        _adminCode = code;
+        document.getElementById('admin-step-code').style.display   = 'none';
+        document.getElementById('admin-step-export').style.display = 'block';
+        msg.className = 'msg';
+        // Pre-select current month/year
+        const now = new Date();
+        const mm  = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('admin-month').value = mm;
+        document.getElementById('admin-year').value  = String(now.getFullYear());
+      } else {
+        showMsg(msg, '❌ Mã xác thực không đúng.');
+      }
+    } catch (err) {
+      showMsg(msg, '❌ Lỗi kết nối: ' + err.message);
+    }
+  }
+
+  async function doExport() {
+    const month = document.getElementById('admin-month').value;
+    const year  = document.getElementById('admin-year').value.trim();
+    const msg   = document.getElementById('msg-admin-export');
+
+    if (!month) return showMsg(msg, 'Vui lòng chọn tháng.');
+    if (!year || !/^\d{4}$/.test(year)) return showMsg(msg, 'Vui lòng nhập năm hợp lệ (4 chữ số).');
+
+    const btn = document.getElementById('btn-export');
+    btn.disabled    = true;
+    btn.textContent = 'Đang tạo file...';
+
+    try {
+      const res = await fetch(`/api/admin/export?month=${month}&year=${year}`, {
+        headers: { 'X-Admin-Code': _adminCode },
+      });
+
+      if (res.status === 401) {
+        _adminCode = '';
+        document.getElementById('admin-step-code').style.display   = 'block';
+        document.getElementById('admin-step-export').style.display = 'none';
+        return showMsg(document.getElementById('msg-admin-code'), '❌ Phiên đã hết hạn. Vui lòng xác thực lại.');
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        return showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
+      }
+
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `danh-sach-yeu-cau-T${month}-${year}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      msg.className   = 'msg ok';
+      msg.textContent = `✅ Đã tải file tháng ${parseInt(month)}/${year} thành công!`;
+    } catch (err) {
+      showMsg(msg, '❌ Lỗi: ' + err.message);
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = '📥 Tải Excel';
+    }
   }
 
   // ─── Utility ─────────────────────────────────────────────────────────────────

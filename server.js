@@ -4,7 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { fillDocx } from './docxFiller.js';
 import { imagesToPdf } from './imagesToPdf.js';
-import { luuHoSo, convertDocxToPdf, uploadPdf } from './graph.js';
+import { luuHoSo, convertDocxToPdf, uploadPdf, uploadJson, timHoSo, listSubmissionsByMonth } from './graph.js';
+import { generateExcel } from './exportExcel.js';
 import { addCommentsToPdf } from './pdfAnnotator.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,12 +18,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Template map theo loai_phuc_loi
 // ──────────────────────────────────────────────
 const TEMPLATE_MAP = {
-  'tham-hoi-om-cbnv':    'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
-  'tham-hoi-om-thannhan':'De nghi thanh toan tien cong doan, phuc loi_temp_om.docx',
-  'ket-hon':             'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
-  'sinh-con':            'De nghi thanh toan tien cong doan, phuc loi_temp_chucmung.docx',
-  'tham-vieng-cbcnv':    'De nghi thanh toan tien cong doan, phuc loi_temp_CBNVtutran.docx',
-  'tham-vieng-thannhan': 'De nghi thanh toan tien cong doan, phuc loi_temp_thannhanCBNVtutran.docx',
+  'tham-hoi-om-cbnv':    'De nghi thanh toan tien cong doan, phuc loi_CBVN_Om.docx',
+  'tham-hoi-om-thannhan':'De nghi thanh toan tien cong doan, phuc loi_TN_CBNV_om.docx',
+  'ket-hon':             'De nghi thanh toan tien cong doan, phuc loi_CBNV_KetHon.docx',
+  'sinh-con':            'De nghi thanh toan tien cong doan, phuc loi_CBNV_SinhCon.docx',
+  'tham-vieng-cbcnv':    'De nghi thanh toan tien cong doan, phuc loi_CBNV_Tt.docx',
+  'tham-vieng-thannhan': 'De nghi thanh toan tien cong doan, phuc loi_TN_CBNV_Tt.docx',
 };
 
 const SU_KIEN_LABEL = {
@@ -48,6 +49,7 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       don_vi,
       loai_phuc_loi,
       ten_nguoi_than,
+      qh_than_nhan,
       benh_vien,
       ngay_cuoi,
       so_giay_ket_hon,
@@ -85,6 +87,7 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       thang,
       nam,
       su_kien:           SU_KIEN_LABEL[loai_phuc_loi] || '',
+      qh_than_nhan:      qh_than_nhan      || '',
       ten_nguoi_than:    ten_nguoi_than    || '',
       benh_vien:         benh_vien         || '',
       ngay_cuoi:         ngay_cuoi         || '',
@@ -115,6 +118,22 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       imagesPdfBuffer,
     });
 
+    // Upload meta.json (fire-and-forget, không chặn luồng chính)
+    uploadJson({
+      folderName,
+      data: {
+        ten_cbcnv, ma_nv, chuc_danh, don_vi, loai_phuc_loi,
+        qh_than_nhan:      qh_than_nhan      || '',
+        ten_nguoi_than:    ten_nguoi_than    || '',
+        benh_vien:         benh_vien         || '',
+        ngay_cuoi:         ngay_cuoi         || '',
+        so_giay_ket_hon:   so_giay_ket_hon   || '',
+        ten_con:           ten_con           || '',
+        so_giay_khai_sinh: so_giay_khai_sinh || '',
+        ngay_nop: `${ngay}-${thang}-${nam}`,
+      },
+    }).catch(e => console.error('meta.json upload failed (non-fatal):', e.message));
+
     // 2) Graph API convert docx → PDF
     let pdfWebUrl = null;
     try {
@@ -134,6 +153,66 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
   } catch (err) {
     console.error('Submit error:', err);
     res.status(500).json({ error: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// GET /api/lookup?ma_nv=123456
+// ──────────────────────────────────────────────
+app.get('/api/lookup', async (req, res) => {
+  const { ma_nv } = req.query;
+  if (!ma_nv || !/^\d{6}$/.test(ma_nv)) {
+    return res.status(400).json({ error: 'Mã nhân viên phải gồm đúng 6 chữ số.' });
+  }
+  try {
+    const results = await timHoSo(ma_nv);
+    res.json({ success: true, results });
+  } catch (err) {
+    console.error('Lookup error:', err);
+    res.status(500).json({ error: 'Không thể tra cứu. Vui lòng thử lại.' });
+  }
+});
+
+// ──────────────────────────────────────────────
+// GET /api/admin/verify — Kiểm tra mã admin
+// ──────────────────────────────────────────────
+const ADMIN_CODE = process.env.ADMIN_CODE || 'Hnmuanao';
+
+app.get('/api/admin/verify', (req, res) => {
+  const code = req.headers['x-admin-code'];
+  if (!code || code !== ADMIN_CODE) {
+    return res.status(401).json({ error: 'Mã admin không đúng.' });
+  }
+  res.json({ ok: true });
+});
+
+// ──────────────────────────────────────────────
+// GET /api/admin/export?month=MM&year=YYYY
+// Header: X-Admin-Code
+// ──────────────────────────────────────────────
+app.get('/api/admin/export', async (req, res) => {
+  const code = req.headers['x-admin-code'];
+  if (!code || code !== ADMIN_CODE) {
+    return res.status(401).json({ error: 'Mã admin không đúng.' });
+  }
+
+  const { month, year } = req.query;
+  if (!month || !year || !/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) {
+    return res.status(400).json({ error: 'Tháng/năm không hợp lệ.' });
+  }
+
+  try {
+    const submissions  = await listSubmissionsByMonth(month, year);
+    const excelBuffer  = await generateExcel(submissions, month, year);
+    const mm = String(month).padStart(2, '0');
+    res.setHeader('Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition',
+      `attachment; filename="danh-sach-yeu-cau-T${mm}-${year}.xlsx"`);
+    res.send(excelBuffer);
+  } catch (err) {
+    console.error('Admin export error:', err);
+    res.status(500).json({ error: 'Có lỗi khi kết xuất. Vui lòng thử lại.' });
   }
 });
 
