@@ -1,0 +1,14 @@
+name: Keep Alive
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping congdoanvht
+        run: |
+          echo "Pinging https://congdoanvht.dpdns.org ..."
+          curl -s -o /dev/null -w "%{http_code}" https://congdoanvht.dpdns.org
+          echo " - Done"
