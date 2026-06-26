@@ -222,7 +222,7 @@
     /* Form body */
     .form-body {
       flex: 1; padding: 32px max(24px, calc((100% - 1296px) / 2)) 48px;
-      display: grid; grid-template-columns: 1fr 360px; gap: 32px;
+      display: grid; grid-template-columns: 2fr 1fr; gap: 32px;
       align-items: start;
     }
 
@@ -232,7 +232,8 @@
       border: 1px solid var(--input-border);
       padding: 28px;
     }
-    .fp-title { font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px; }
+    .fp-title { font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+    .fp-title img { width: 22px; height: 22px; flex-shrink: 0; }
 
     /* Fields */
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -241,13 +242,14 @@
     .field-label { font-size: 14px; color: var(--text-primary); display: flex; align-items: center; }
     .field-label .req { color: var(--primary); margin-left: 2px; }
     .field-input, .field-select, .field-textarea {
-      width: 100%; height: 44px; padding: 0 12px;
-      border: 1px solid var(--input-border); border-radius: 10px;
+      width: 100%; height: 48px; padding: 0 12px;
+      border: 1px solid var(--input-border); border-radius: 12px;
       font-size: 14px; font-family: inherit;
       background: var(--input-bg); color: var(--text-primary);
       appearance: none; -webkit-appearance: none; outline: none;
       transition: border-color .15s, background .15s;
     }
+    .field-textarea { height: auto; padding: 12px; resize: vertical; min-height: 96px; }
     .field-input::placeholder { color: var(--text-placeholder); }
     .field-input:focus, .field-select:focus { border-color: var(--input-border-focus); background: #fff; }
     .field-input.invalid { border-color: var(--primary) !important; }
@@ -263,10 +265,10 @@
 
     /* Upload */
     .upload-btn {
-      width: 100%; height: 44px;
+      width: 100%; height: 48px;
       display: flex; align-items: center; justify-content: space-between;
       padding: 0 14px;
-      border: 1px solid var(--input-border); border-radius: 10px;
+      border: 1px solid var(--input-border); border-radius: 12px;
       background: var(--input-bg); cursor: pointer;
       font-size: 14px; color: var(--text-secondary); font-family: inherit;
     }
@@ -287,17 +289,17 @@
     /* Action buttons */
     .form-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
     .btn-prev {
-      height: 44px; padding: 0 24px;
+      height: 56px; padding: 0 28px;
       background: white; color: var(--text-secondary);
       border: 1px solid var(--input-border); border-radius: 999px;
-      font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer;
+      font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer;
     }
     .btn-prev:hover { background: var(--input-bg); }
     .btn-next {
-      height: 44px; padding: 0 28px;
+      height: 56px; padding: 0 32px;
       background: var(--primary); color: white;
       border: none; border-radius: 999px;
-      font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer;
+      font-size: 15px; font-weight: 500; font-family: inherit; cursor: pointer;
       display: flex; align-items: center; gap: 6px;
     }
     .btn-next:hover { background: var(--primary-hover); }
@@ -333,24 +335,19 @@
 
     /* ─── Guide sidebar ─── */
     .guide-sidebar {
-      background: var(--primary-light); border-radius: 20px;
-      box-shadow: 0 4px 24px rgba(238,0,51,0.08);
-      padding: 28px;
+      background: var(--input-bg); border-radius: 16px;
+      padding: 24px;
     }
-    .gs-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 24px; }
+    .gs-title { font-size: 20px; font-weight: 500; color: var(--text-primary); margin-bottom: 24px; }
     .gs-steps { display: flex; flex-direction: column; gap: 24px; }
-    .gs-step { display: flex; gap: 16px; }
+    .gs-step { display: flex; gap: 12px; align-items: flex-start; }
     .gs-icon {
-      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      width: 28px; height: 28px; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
     }
-    .gs-icon img { width: 16px; height: 16px; }
-    .gs-icon.s1 { background: var(--input-bg); }
-    .gs-icon.s2 { background: #ffedf1; }
-    .gs-icon.s3 { background: transparent; }
-    .gs-icon.s3 img { width: 32px; height: 32px; }
-    .gs-text .gt-title { font-size: 14px; font-weight: 500; color: var(--text-primary); margin-bottom: 4px; }
-    .gs-text .gt-desc { font-size: 13px; color: var(--text-secondary); line-height: 20px; }
+    .gs-icon img { width: 28px; height: 28px; }
+    .gs-text .gt-title { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+    .gs-text .gt-desc { font-size: 16px; color: var(--text-secondary); line-height: 24px; }
 
     /* ═══════════════════════════════════
        SUCCESS PAGE
