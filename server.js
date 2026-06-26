@@ -22,7 +22,7 @@ const TEMPLATE_MAP = {
   'tham-hoi-om-thannhan':'De nghi thanh toan tien cong doan, phuc loi_TN_CBNV_om.docx',
   'ket-hon':             'De nghi thanh toan tien cong doan, phuc loi_CBNV_KetHon.docx',
   'sinh-con':            'De nghi thanh toan tien cong doan, phuc loi_CBNV_SinhCon.docx',
-  'tham-vieng-cbcnv':    'De nghi thanh toan tien cong doan, phuc loi_CBNV_Tt.docx',
+  'tham-vieng-cbnv':    'De nghi thanh toan tien cong doan, phuc loi_CBNV_Tt.docx',
   'tham-vieng-thannhan': 'De nghi thanh toan tien cong doan, phuc loi_TN_CBNV_Tt.docx',
 };
 
