@@ -25,13 +25,19 @@ const SITE_ID  = process.env.SHAREPOINT_SITE_ID;
 const DRIVE_ID = process.env.SHAREPOINT_DRIVE_ID;
 const BASE     = 'https://graph.microsoft.com/v1.0';
 
+// Site-based drive URL — không phụ thuộc vào DRIVE_ID format.
+// Graph API chấp nhận /sites/{siteId}/drive thay cho /drives/{driveId}.
+const DRIVE_BASE = SITE_ID
+  ? `${BASE}/sites/${SITE_ID}/drive`
+  : `${BASE}/drives/${DRIVE_ID}`;
+
 /**
  * Upload một file buffer vào SharePoint.
  * Trả về { webUrl, driveId, itemId }.
  */
 async function uploadBuffer({ folderPath, filename, buffer, contentType = 'application/octet-stream' }) {
   const token = await getToken();
-  const url   = `${BASE}/drives/${DRIVE_ID}/root:/${folderPath}/${filename}:/content`;
+  const url   = `${DRIVE_BASE}/root:/${folderPath}/${filename}:/content`;
 
   const res = await fetch(url, {
     method:  'PUT',
@@ -114,7 +120,7 @@ export async function convertDocxToPdf(driveId, itemId) {
 export async function timHoSo(maNV) {
   const token = await getToken();
   // Liệt kê children của root, lọc theo tên chứa _maNV_
-  const url = `${BASE}/drives/${DRIVE_ID}/root/children?$select=name,webUrl,folder,createdDateTime&$top=200`;
+  const url = `${DRIVE_BASE}/root/children?$select=name,webUrl,folder,createdDateTime&$top=200`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -178,7 +184,7 @@ export async function uploadJson({ folderName, data, filename = 'meta.json' }) {
 // ──────────────────────────────────────────────
 async function readMetaFromFolder(folderName) {
   const token = await getToken();
-  const url = `${BASE}/drives/${DRIVE_ID}/root:/${folderName}/meta.json:/content`;
+  const url = `${DRIVE_BASE}/root:/${folderName}/meta.json:/content`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -199,7 +205,7 @@ async function readMetaFromFolder(folderName) {
 // ──────────────────────────────────────────────
 export async function listSubmissionsByMonth(thang, nam) {
   const token = await getToken();
-  const url = `${BASE}/drives/${DRIVE_ID}/root/children?$select=name,webUrl,folder,createdDateTime&$top=500`;
+  const url = `${DRIVE_BASE}/root/children?$select=name,webUrl,folder,createdDateTime&$top=500`;
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
