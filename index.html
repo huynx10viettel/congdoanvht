@@ -192,11 +192,7 @@
     .fh-hero img { height: 104px; width: auto; display: block; }
 
     /* Page title + stepper */
-    .form-title-area {
-      background: #fff; padding: 20px max(24px, calc((100% - 1296px) / 2)) 0;
-      border-bottom: none;
-    }
-    .form-page-title { font-size: 26px; font-weight: 500; color: var(--text-primary); margin-bottom: 16px; }
+    /* .form-page-title defined in form-body section below */
 
     /* Stepper */
     .stepper3 {
@@ -225,15 +221,19 @@
       display: grid; grid-template-columns: 2fr 1fr; gap: 32px;
       align-items: start;
     }
+    .form-left-col { display: flex; flex-direction: column; gap: 24px; }
+    .form-sidebar-col { padding-top: 116px; }
+
+    /* Page title + stepper — inside left col */
+    .form-page-title { font-size: 24px; font-weight: 500; line-height: 32px; color: var(--text-primary); }
 
     /* Form panel */
     .form-panel {
       background: #fff; border-radius: 16px;
       border: 1px solid var(--input-border);
-      padding: 28px;
+      padding: 24px;
     }
-    .fp-title { font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
-    .fp-title img { width: 22px; height: 22px; flex-shrink: 0; }
+    .fp-title { font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 20px; }
 
     /* Fields */
     .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -459,7 +459,7 @@
       .hero-section  { grid-template-columns: 1fr; }
       .hero-right    { display: none; }
       .form-body { grid-template-columns: 1fr; }
-      .guide-sidebar { display: none; }
+      .form-sidebar-col { display: none; }
       .confirm-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 600px) {
@@ -618,37 +618,33 @@
         </div>
       </div>
 
-      <!-- Title + Stepper -->
-      <div class="form-title-area" style="background:#fff;padding:20px max(24px,calc((100% - 1296px)/2)) 24px;border-bottom:1px solid var(--input-border)">
-        <div class="form-page-title" id="form-page-title">Tạo yêu cầu phúc lợi</div>
-        <div class="stepper3">
-          <div class="s3-item">
-            <div class="s3-dot" id="s-dot-1">1</div>
-            <span class="s3-label" id="s-label-1">Thông tin CBNV</span>
-          </div>
-          <div class="s3-line" id="s-line-1"></div>
-          <div class="s3-item">
-            <div class="s3-dot inactive" id="s-dot-2">2</div>
-            <span class="s3-label" id="s-label-2">Thông tin thăm hỏi</span>
-          </div>
-          <div class="s3-line" id="s-line-2"></div>
-          <div class="s3-item">
-            <div class="s3-dot inactive" id="s-dot-3">3</div>
-            <span class="s3-label" id="s-label-3">Xác nhận &amp; gửi yêu cầu</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Body -->
       <div class="form-body">
 
-        <!-- Left: form panels -->
-        <div>
+        <!-- Left: title + stepper + form panels -->
+        <div class="form-left-col">
+          <div class="form-page-title" id="form-page-title">Tạo yêu cầu phúc lợi</div>
+          <div class="stepper3">
+            <div class="s3-item">
+              <div class="s3-dot" id="s-dot-1">1</div>
+              <span class="s3-label" id="s-label-1">Thông tin CBNV</span>
+            </div>
+            <div class="s3-line" id="s-line-1"></div>
+            <div class="s3-item">
+              <div class="s3-dot inactive" id="s-dot-2">2</div>
+              <span class="s3-label" id="s-label-2">Thông tin thăm hỏi</span>
+            </div>
+            <div class="s3-line" id="s-line-2"></div>
+            <div class="s3-item">
+              <div class="s3-dot inactive" id="s-dot-3">3</div>
+              <span class="s3-label" id="s-label-3">Xác nhận &amp; gửi yêu cầu</span>
+            </div>
+          </div>
 
           <!-- ── Step 1: CBNV info ── -->
           <div id="fp-step1">
             <div class="form-panel">
-              <div class="fp-title"><img src="icon user.svg" alt="">Thông tin CBNV đề nghị hỗ trợ</div>
+              <div class="fp-title">Thông tin CBNV đề nghị hỗ trợ</div>
               <div class="field-group">
                 <label class="field-label">Họ và tên CBNV <span class="req">*</span></label>
                 <input class="field-input" id="ten_cbcnv" placeholder="Nhập họ và tên đầy đủ" autocomplete="name" />
@@ -693,7 +689,7 @@
           <!-- ── Step 2: Welfare info ── -->
           <div id="fp-step2" style="display:none">
             <div class="form-panel">
-              <div class="fp-title"><img src="icon heart.svg" alt="">Thông tin thăm hỏi</div>
+              <div class="fp-title">Thông tin thăm hỏi</div>
 
               <!-- Thăm hỏi thân nhân ốm -->
               <div id="s2-om-thannhan" style="display:none">
@@ -929,9 +925,10 @@
             </div>
           </div>
 
-        </div><!-- /left -->
+        </div><!-- /form-left-col -->
 
         <!-- Right: guide sidebar -->
+        <div class="form-sidebar-col">
         <div class="guide-sidebar">
           <div class="gs-title">Hướng dẫn tạo yêu cầu</div>
           <div class="gs-steps">
@@ -964,6 +961,7 @@
             </div>
           </div>
         </div>
+        </div><!-- /form-sidebar-col -->
 
       </div><!-- /form-body -->
     </div>

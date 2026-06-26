@@ -152,7 +152,7 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
     res.json({ success: true, webUrl, pdfWebUrl });
   } catch (err) {
     console.error('Submit error:', err);
-    res.status(500).json({ error: 'Có lỗi xảy ra. Vui lòng thử lại.' });
+    res.status(500).json({ error: err.message || 'Có lỗi xảy ra. Vui lòng thử lại.' });
   }
 });
 
@@ -217,4 +217,19 @@ app.get('/api/admin/export', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server chạy tại http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server chạy tại http://localhost:${PORT}`);
+
+  // ── Keep-alive: tự ping mỗi 10 phút để tránh Render free tier ngủ ──
+  const SELF_URL = process.env.RENDER_EXTERNAL_URL;
+  if (SELF_URL) {
+    setInterval(() => {
+      fetch(`${SELF_URL}/api/ping`)
+        .then(() => console.log('[keep-alive] ping OK'))
+        .catch(e => console.warn('[keep-alive] ping failed:', e.message));
+    }, 10 * 60 * 1000); // 10 phút
+  }
+});
+
+// Endpoint ping (nhẹ, không có logic)
+app.get('/api/ping', (_req, res) => res.json({ ok: true }));

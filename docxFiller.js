@@ -13,6 +13,7 @@ export function fillDocx(templatePath, data) {
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks:    true,
+    nullGetter:    () => '',   // trả '' cho tag thiếu thay vì throw
   });
 
   doc.render(data);
