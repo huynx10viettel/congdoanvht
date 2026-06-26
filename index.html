@@ -164,7 +164,7 @@
     /* ═══════════════════════════════════
        FORM PAGE (3-step flow)
     ═══════════════════════════════════ */
-    .form-page { min-height: 100vh; background: var(--bg-page); display: flex; flex-direction: column; }
+    .form-page { min-height: 100vh; background: #fff; display: flex; flex-direction: column; }
 
     /* Form header */
     .form-header {
@@ -172,7 +172,6 @@
       padding: 0 max(24px, calc((100% - 1296px) / 2));
       display: flex; align-items: center; justify-content: space-between;
       height: 104px;
-      border-bottom: 1px solid var(--input-border);
       position: relative; overflow: hidden;
     }
     .fh-left { display: flex; align-items: center; gap: 24px; z-index: 1; }
@@ -188,7 +187,7 @@
       font-size: 14px; font-family: inherit; cursor: pointer;
     }
     .btn-back:hover { background: #e8eaed; }
-    .fh-hero { position: absolute; right: 0; top: 0; height: 104px; }
+    .fh-hero { height: 104px; flex-shrink: 0; align-self: flex-end; }
     .fh-hero img { height: 104px; width: auto; display: block; }
 
     /* Page title + stepper */
