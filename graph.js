@@ -21,8 +21,8 @@ async function getToken() {
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
-const SITE_ID  = process.env.SHAREPOINT_SITE_ID;
-const DRIVE_ID = process.env.SHAREPOINT_DRIVE_ID;
+const SITE_ID  = process.env.SHAREPOINT_SITE_ID; // optional
+const DRIVE_ID = process.env.GRAPH_DRIVE_ID;      // matches Render env var
 const BASE     = 'https://graph.microsoft.com/v1.0';
 
 // Site-based drive URL — không phụ thuộc vào DRIVE_ID format.
