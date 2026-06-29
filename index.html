@@ -1150,7 +1150,7 @@
           <div id="msg-admin-export" class="msg"></div>
           <div class="card-btn-row" style="margin-top:16px">
             <button class="card-btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
-            <button class="card-btn-primary" id="btn-export" onclick="doExport()">📥 Tải Excel</button>
+            <button class="card-btn-primary" id="btn-export" onclick="doExport()">📊 Tạo file tổng hợp</button>
           </div>
         </div>
       </div>
@@ -1622,18 +1622,14 @@ async function doExport() {
       const data = await res.json().catch(() => ({}));
       return showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
     }
-    const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `danh-sach-yeu-cau-T${month}-${year}.xlsx`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const data = await res.json();
     msg.className = 'msg ok';
-    msg.textContent = `✅ Đã tải file tháng ${parseInt(month)}/${year} thành công!`;
+    msg.innerHTML = `✅ Đã lưu ${data.count || 0} hồ sơ tháng ${parseInt(month)}/${year} vào SharePoint.`
+      + (data.webUrl ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở file</a>` : '');
   } catch (err) {
     showMsg(msg, '❌ Lỗi: ' + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = '📥 Tải Excel';
+    btn.disabled = false; btn.textContent = '📊 Tạo file tổng hợp';
   }
 }
 
