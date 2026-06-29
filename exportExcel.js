@@ -1,203 +1,331 @@
 import ExcelJS from 'exceljs';
 
-// ──────────────────────────────────────────────
-// Mapping loai_phuc_loi → label (khớp với template Excel)
-// ──────────────────────────────────────────────
-const LOAI_LABEL = {
-  'tham-hoi-om-cbnv':    'thăm hỏi CBNV',
-  'tham-hoi-om-thannhan':'thăm hỏi thân nhân CBNV',
-  'ket-hon':             'chúc mừng CBNV',
-  'sinh-con':            'chúc mừng CBNV',
-  'tham-vieng-cbcnv':    'viếng CBNV từ trần',
-  'tham-vieng-thannhan': 'viếng thân nhân CBNV từ trần',
-};
-
-// Mức tiền theo loại phúc lợi (VNĐ)
+// ── Mức tiền theo template gốc (cột F=CÔNG ĐOÀN, cột G=PHÚC LỢI) ───────────
 const LOAI_AMOUNTS = {
-  'tham-hoi-om-cbnv':    { cd: 500_000,   pl: 1_000_000 },
-  'tham-hoi-om-thannhan':{ cd: 500_000,   pl: 1_000_000 },
+  'tham-hoi-om-cbnv':    { cd:   500_000, pl: 1_000_000 },
+  'tham-hoi-om-thannhan':{ cd:   500_000, pl: 1_000_000 },
   'ket-hon':             { cd: 1_000_000, pl: 1_500_000 },
   'sinh-con':            { cd: 1_000_000, pl: 1_500_000 },
-  'tham-vieng-cbcnv':    { cd: 1_500_000, pl: 2_500_000 },
+  'tham-vieng-cbnv':     { cd: 1_500_000, pl: 2_500_000 },
   'tham-vieng-thannhan': { cd: 1_500_000, pl: 2_000_000 },
 };
 
+// ── Chuyển số thành chữ tiếng Việt ──────────────────────────────────────────
+function _doc3so(n, coTram) {
+  const dv  = ['', 'một', 'hai', 'ba', 'bốn', 'năm', 'sáu', 'bảy', 'tám', 'chín'];
+  const t   = Math.floor(n / 100);
+  const ch  = Math.floor((n % 100) / 10);
+  const dvi = n % 10;
+  let s = '';
+  if (t > 0 || coTram) {
+    s += dv[t] + ' trăm';
+    if (ch === 0 && dvi > 0) { s += ' linh ' + dv[dvi]; }
+    else if (ch === 1) { s += ' mười' + (dvi === 5 ? ' lăm' : dvi > 0 ? ' ' + dv[dvi] : ''); }
+    else if (ch > 1)  { s += ' ' + dv[ch] + ' mươi' + (dvi === 1 ? ' mốt' : dvi === 5 ? ' lăm' : dvi > 0 ? ' ' + dv[dvi] : ''); }
+  } else if (ch > 0) {
+    if (ch === 1) s += 'mười' + (dvi === 5 ? ' lăm' : dvi > 0 ? ' ' + dv[dvi] : '');
+    else          s += dv[ch] + ' mươi' + (dvi === 1 ? ' mốt' : dvi === 5 ? ' lăm' : dvi > 0 ? ' ' + dv[dvi] : '');
+  } else if (dvi > 0) {
+    s += dv[dvi];
+  }
+  return s.trim();
+}
+
+function soThanhChu(so) {
+  if (!so || so === 0) return 'Không đồng./.';
+  const ty    = Math.floor(so / 1_000_000_000);
+  const trieu = Math.floor((so % 1_000_000_000) / 1_000_000);
+  const nghin = Math.floor((so % 1_000_000) / 1_000);
+  const le    = so % 1_000;
+  const parts = [];
+  if (ty    > 0) parts.push(_doc3so(ty,    false)          + ' tỷ');
+  if (trieu > 0) parts.push(_doc3so(trieu, ty > 0)         + ' triệu');
+  if (nghin > 0) parts.push(_doc3so(nghin, trieu > 0 || ty > 0) + ' nghìn');
+  if (le    > 0) parts.push(_doc3so(le,    nghin > 0 || trieu > 0 || ty > 0));
+  if (!parts.length) return 'Không đồng./.';
+  const str = parts.join(' ');
+  return str.charAt(0).toUpperCase() + str.slice(1) + ' đồng./.';
+}
+
+// ── NỘI DUNG theo từng loại (khớp template) ─────────────────────────────────
 function buildNoiDung(s) {
-  const name = s.ten_cbcnv || '';
+  const name = s.ten_cbcnv    || '';
   const qh   = s.qh_than_nhan || '';
-  const bv   = s.benh_vien || '';
   switch (s.loai_phuc_loi) {
     case 'tham-hoi-om-cbnv':
-      return `Chi kinh phí CĐ, PL thăm hỏi đ/c ${name} ốm điều trị tại ${bv}`.trimEnd();
+      return `Chi kinh phí CĐ, PL thăm hỏi đ/c ${name} ốm`;
     case 'tham-hoi-om-thannhan':
-      return `Chi kinh phí CĐ, PL thăm hỏi ${qh} đ/c ${name} ốm điều trị tại ${bv}`.trimEnd();
+      return `Chi kinh phí CĐ, PL thăm hỏi ${qh} đ/c ${name} ốm`;
     case 'ket-hon':
       return `Chi kinh phí CĐ, PL chúc mừng đ/c ${name} kết hôn`;
     case 'sinh-con':
       return `Chi kinh phí CĐ, PL chúc mừng đ/c ${name} sinh con`;
-    case 'tham-vieng-cbcnv':
-      return `Chi kinh phí CĐ, PL viếng đ/c ${name} từ trần`;
+    case 'tham-vieng-cbnv':
+      return `Chi kinh phí CĐ, PL thăm viếng đ/c ${name} từ trần`;
     case 'tham-vieng-thannhan':
-      return `Chi kinh phí CĐ, PL viếng ${qh} đ/c ${name} từ trần`.trimEnd();
+      return `Chi kinh phí CĐ, PL thăm viếng ${qh} đ/c ${name} từ trần`;
     default:
       return '';
   }
 }
 
-// Format số tiền: 1500000 → "1.500.000"
-function fmtVND(n) {
-  return Number(n).toLocaleString('vi-VN');
+// ── HỒ SƠ KÈM THEO ──────────────────────────────────────────────────────────
+// Label mapping cho loại giấy tờ
+const GIAY_TO_LABEL = {
+  'giay-ra-vien':           'Giấy ra viện',
+  'giay-xac-nhan-nam-vien': 'Giấy xác nhận nằm viện',
+  'giay-khai-sinh':         'Giấy khai sinh',
+  'giay-chung-sinh':        'Giấy chứng sinh',
+  'thiep-cuoi':             'Thiệp cưới',
+  'giay-dang-ky-ket-hon':   'Giấy đăng ký kết hôn',
+  'cao-pho':                'Cáo phó',
+};
+
+function buildHoSo(s) {
+  // Nếu đã có giá trị rõ ràng từ meta cũ
+  if (s.ho_so_kem_theo) return s.ho_so_kem_theo;
+
+  const loai = s.loai_giay_to || '';
+  const so   = s.so_giay_to   || '';
+  const ngay = s.ngay_giay_to || '';
+
+  switch (s.loai_phuc_loi) {
+    case 'tham-hoi-om-cbnv':
+    case 'tham-hoi-om-thannhan': {
+      const label = GIAY_TO_LABEL[loai] || 'Giấy ra viện';
+      return ngay ? `${label} ngày ${ngay}` : label;
+    }
+    case 'sinh-con': {
+      const label  = GIAY_TO_LABEL[loai] || 'Giấy khai sinh';
+      const soStr  = so   ? ` số ${so}`    : '';
+      const ngayStr = ngay ? ` ngày ${ngay}` : '';
+      return `${label}${soStr}${ngayStr}`;
+    }
+    case 'ket-hon': {
+      if (loai === 'giay-dang-ky-ket-hon') {
+        return so ? `Giấy đăng ký kết hôn số ${so}` : 'Giấy đăng ký kết hôn';
+      }
+      return ngay ? `Thiệp cưới ngày ${ngay}` : 'Thiệp cưới';
+    }
+    case 'tham-vieng-cbnv':
+    case 'tham-vieng-thannhan':
+      return ngay ? `Cáo phó ngày ${ngay}` : 'Cáo phó';
+    default:
+      return '';
+  }
 }
 
-// ──────────────────────────────────────────────
-// generateExcel — tạo buffer xlsx từ mảng submissions
-// submissions: [{ ten_cbcnv, ma_nv, chuc_danh, don_vi, loai_phuc_loi,
-//                 qh_than_nhan, ten_nguoi_than, benh_vien, ngay_nop, ... }]
-// ──────────────────────────────────────────────
+// ── HỌ TÊN người nhận (cột 10) ──────────────────────────────────────────────
+function buildHoTen(s) {
+  switch (s.loai_phuc_loi) {
+    case 'tham-hoi-om-thannhan':
+    case 'tham-vieng-thannhan':
+      return s.ten_nguoi_than || '';
+    default:
+      return s.ten_cbcnv || '';
+  }
+}
+
+// ── QUAN HỆ GIA ĐÌNH (cột 11) ───────────────────────────────────────────────
+function buildQuanHe(s) {
+  switch (s.loai_phuc_loi) {
+    case 'tham-hoi-om-thannhan':
+    case 'tham-vieng-thannhan':
+      return s.qh_than_nhan || '';
+    default:
+      return 'Bản thân';
+  }
+}
+
+// ── Shared border style ──────────────────────────────────────────────────────
+const BORDER_THIN = {
+  top:    { style: 'thin' },
+  left:   { style: 'thin' },
+  bottom: { style: 'thin' },
+  right:  { style: 'thin' },
+};
+
+// ── generateExcel ────────────────────────────────────────────────────────────
 export async function generateExcel(submissions, thang, nam) {
   const wb = new ExcelJS.Workbook();
 
-  // ── Sheet 1: Danh sách yêu cầu thanh toán ──────────────────────────────────
-  const s1 = wb.addWorksheet('Danh sách yêu cầu thanh toán');
+  // ══════════════════════════════════════════════════════════════════════════
+  // Sheet 1: Danh sách yêu cầu (raw data)
+  // ══════════════════════════════════════════════════════════════════════════
+  const s1 = wb.addWorksheet('Danh sách yêu cầu');
 
   const s1Headers = [
-    'ID', 'Start time', 'Completion time', 'Email', 'Name', 'Last modified time',
-    'Tên CBNV', 'Mã NV', 'Chức vụ', 'Đơn vị',
-    'Chọn phúc lợi yêu cầu', 'Chúc mừng CBNV', 'Thân nhân của bạn đồng chí là',
-    'Nơi điều trị', 'Loại hồ sơ, giấy tờ kèm theo', 'Số giấy tờ', 'Xác nhận thông tin',
-    'Họ và tên thân nhân', 'Họ và tên thân nhân:', 'Thân nhân của bạn đồng chí là:', 'Ngày mất',
+    'STT', 'Ngày nộp', 'Họ và tên CBNV', 'Mã NV', 'Chức danh', 'Đơn vị',
+    'Loại phúc lợi',
+    'Quan hệ thân nhân', 'Họ tên người thân',
+    'Loại giấy tờ', 'Số giấy tờ', 'Ngày giấy tờ',
+    'Hồ sơ kèm theo (tổng hợp)',
   ];
-  const headerRow1 = s1.addRow(s1Headers);
-  headerRow1.font = { bold: true };
-  headerRow1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+
+  const hRow1 = s1.addRow(s1Headers);
+  hRow1.height = 30;
+  hRow1.eachCell(c => {
+    c.font      = { bold: true };
+    c.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9E1F2' } };
+    c.border    = BORDER_THIN;
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  });
 
   submissions.forEach((s, i) => {
-    const chuMungLoai = s.loai_phuc_loi === 'ket-hon'
-      ? 'kết hôn' : s.loai_phuc_loi === 'sinh-con' ? 'sinh con' : '';
-    const soGiayTo = s.so_giay_ket_hon || s.so_giay_khai_sinh || '';
-    s1.addRow([
+    const row = s1.addRow([
       i + 1,
-      s.ngay_nop || '',
-      s.ngay_nop || '',
-      '', '', '',
-      s.ten_cbcnv     || '',
-      s.ma_nv         || '',
-      s.chuc_danh     || '',
-      s.don_vi        || '',
-      LOAI_LABEL[s.loai_phuc_loi] || s.loai_phuc_loi || '',
-      chuMungLoai,
-      s.qh_than_nhan  || '',
-      s.benh_vien     || '',
-      '',
-      soGiayTo,
-      '',
+      s.ngay_nop       || '',
+      s.ten_cbcnv      || '',
+      s.ma_nv          || '',
+      s.chuc_danh      || '',
+      s.don_vi         || '',
+      s.loai_phuc_loi  || '',
+      s.qh_than_nhan   || '',
       s.ten_nguoi_than || '',
-      '',
-      s.qh_than_nhan  || '',
-      '',
+      GIAY_TO_LABEL[s.loai_giay_to] || s.loai_giay_to || '',
+      s.so_giay_to     || '',
+      s.ngay_giay_to   || '',
+      buildHoSo(s),
     ]);
+    row.eachCell(c => { c.border = BORDER_THIN; c.alignment = { vertical: 'middle' }; });
   });
 
-  // Auto-width for key columns
-  s1.columns.forEach((col, idx) => {
-    col.width = idx < 6 ? 16 : idx === 6 ? 22 : 18;
-  });
+  const s1Widths = [5, 12, 24, 10, 18, 16, 26, 18, 24, 26, 14, 14, 34];
+  s1.columns.forEach((col, i) => { col.width = s1Widths[i] ?? 14; });
 
-  // ── Sheet 2: CD - PL in cho ký nhận ────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════════════
+  // Sheet 2: CD - PL in cho ký nhận (bảng in ký)
+  // ══════════════════════════════════════════════════════════════════════════
   const s2 = wb.addWorksheet('CD - PL in cho ký nhận');
+  const mm  = String(thang).padStart(2, '0');
+  const TOTAL_COLS = 13; // A→M
 
-  // Tiêu đề bảng
-  s2.mergeCells('A1:M1');
-  const titleRow = s2.getRow(1);
-  titleRow.getCell(1).value =
-    `DANH SÁCH CHI PHÍ CÔNG ĐOÀN VÀ PHÚC LỢI – THÁNG ${parseInt(thang)}/${nam}`;
-  titleRow.getCell(1).font      = { bold: true, size: 13 };
-  titleRow.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
-  titleRow.height = 28;
+  // ── Hàng 1: Tên tổ chức ─────────────────────────────────────────────────
+  s2.mergeCells(`A1:M1`);
+  const r1 = s2.getRow(1);
+  r1.getCell(1).value     = 'TỔNG CÔNG TY CÔNG NGHIỆP CÔNG NGHỆ CAO VIETTEL';
+  r1.getCell(1).font      = { bold: true };
+  r1.getCell(1).alignment = { horizontal: 'center' };
 
-  const s2Headers = [
-    'STT', 'MÃ NV', 'HỌ VÀ TÊN', 'NỘI DUNG', 'ĐƠN VỊ',
-    'CÔNG ĐOÀN\n(đồng)', 'PHÚC LỢI\n(đồng)', 'THUẾ TNCN', 'THỰC NHẬN\n(đồng)',
-    'HỌ TÊN', 'QUAN HỆ GIA ĐÌNH', 'HỒ SƠ KÈM THEO', 'KÝ NHẬN',
+  // ── Hàng 2: Tên công đoàn ───────────────────────────────────────────────
+  s2.mergeCells('A2:M2');
+  const r2 = s2.getRow(2);
+  r2.getCell(1).value     = 'CÔNG ĐOÀN CƠ SỞ';
+  r2.getCell(1).font      = { bold: true };
+  r2.getCell(1).alignment = { horizontal: 'center' };
+
+  // ── Hàng 3: Tiêu đề ─────────────────────────────────────────────────────
+  s2.mergeCells('A3:M3');
+  const r3      = s2.getRow(3);
+  r3.height     = 26;
+  r3.getCell(1).value     = `DANH SÁCH CHI TIỀN CÔNG ĐOÀN PHÚC LỢI THÁNG ${parseInt(thang)} ${nam}`;
+  r3.getCell(1).font      = { bold: true, size: 13 };
+  r3.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // ── Hàng 4: Ghi chú phiếu chi ──────────────────────────────────────────
+  s2.mergeCells('A4:M4');
+  const r4 = s2.getRow(4);
+  r4.getCell(1).value     = `(Kèm theo phiếu chi số PC_CĐCS số              ngày    /    /${nam})`;
+  r4.getCell(1).alignment = { horizontal: 'center' };
+
+  // ── Hàng 5: Header cột ──────────────────────────────────────────────────
+  const colHeaders = [
+    'TT', 'MÃ NV', 'HỌ VÀ TÊN', 'NỘI DUNG', 'ĐƠN VỊ',
+    'CÔNG ĐOÀN', 'PHÚC LỢI', 'THUẾ TNCN', 'THỰC NHẬN\n(VNĐ)',
+    'HỌ TÊN', 'QUAN HỆ GIA ĐÌNH', 'HỒ SƠ KÈM THEO', 'KÝ NHẬN\n(Ký và ghi rõ họ tên)',
   ];
-  const headerRow2 = s2.addRow(s2Headers);
-  headerRow2.font      = { bold: true };
-  headerRow2.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBDD7EE' } };
-  headerRow2.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' };
-  headerRow2.height = 36;
-
-  const borderThin = {
-    top:    { style: 'thin' },
-    left:   { style: 'thin' },
-    bottom: { style: 'thin' },
-    right:  { style: 'thin' },
-  };
-
-  // Apply border to header
-  headerRow2.eachCell(cell => {
-    cell.border    = borderThin;
-    cell.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' };
+  const hRow2   = s2.addRow(colHeaders);  // row 5
+  hRow2.height  = 36;
+  hRow2.eachCell(c => {
+    c.font      = { bold: true };
+    c.fill      = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFBDD7EE' } };
+    c.border    = BORDER_THIN;
+    c.alignment = { wrapText: true, horizontal: 'center', vertical: 'middle' };
   });
 
-  let tongCD = 0, tongPL = 0, tongNhan = 0;
+  // ── Data rows (bắt đầu từ row 6) ────────────────────────────────────────
+  const DATA_START = 6;
+  let tongCD = 0, tongPL = 0;
 
   submissions.forEach((s, i) => {
-    const amounts = LOAI_AMOUNTS[s.loai_phuc_loi] || { cd: 0, pl: 0 };
-    const thueTNCN = 0;
-    const thucNhan = amounts.cd + amounts.pl - thueTNCN;
-    tongCD   += amounts.cd;
-    tongPL   += amounts.pl;
-    tongNhan += thucNhan;
+    const amounts  = LOAI_AMOUNTS[s.loai_phuc_loi] || { cd: 0, pl: 0 };
+    tongCD += amounts.cd;
+    tongPL += amounts.pl;
 
     const row = s2.addRow([
       i + 1,
-      s.ma_nv          || '',
-      s.ten_cbcnv      || '',
+      s.ma_nv     || '',
+      s.ten_cbcnv || '',
       buildNoiDung(s),
-      s.don_vi         || '',
+      s.don_vi    || '',
       amounts.cd,
       amounts.pl,
-      thueTNCN || '',
-      thucNhan,
-      s.ten_nguoi_than || '',
-      s.qh_than_nhan   || '',
-      '',
-      '',
+      '',                  // THUẾ TNCN
+      amounts.cd + amounts.pl,
+      buildHoTen(s),
+      buildQuanHe(s),
+      buildHoSo(s),
+      '',                  // KÝ NHẬN
     ]);
 
-    // Format money cells
-    [6, 7, 8, 9].forEach(colIdx => {
-      const cell = row.getCell(colIdx);
-      if (cell.value !== '') {
-        cell.numFmt = '#,##0';
-        cell.alignment = { horizontal: 'right' };
-      }
-    });
+    row.height = 22;
+    row.eachCell(c => { c.border = BORDER_THIN; c.alignment = { vertical: 'middle', wrapText: true }; });
 
-    row.eachCell(cell => { cell.border = borderThin; });
+    // Format số tiền
+    [6, 7, 9].forEach(col => {
+      const c = row.getCell(col);
+      c.numFmt    = '#,##0';
+      c.alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+    row.getCell(4).alignment = { wrapText: true, vertical: 'middle' };
+    row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
   });
 
-  // Tổng cộng
-  if (submissions.length > 0) {
-    const totalRow = s2.addRow([
-      '', '', 'TỔNG CỘNG', '', '',
-      tongCD, tongPL, '', tongNhan,
-      '', '', '', '',
-    ]);
-    totalRow.font = { bold: true };
-    totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF99' } };
-    [6, 7, 9].forEach(colIdx => {
-      const cell = totalRow.getCell(colIdx);
-      cell.numFmt = '#,##0';
-      cell.alignment = { horizontal: 'right' };
-    });
-    totalRow.eachCell(cell => { cell.border = borderThin; });
-  }
+  // ── Hàng TỔNG CỘNG ──────────────────────────────────────────────────────
+  const DATA_END = DATA_START + submissions.length - 1;
 
-  // Column widths for sheet 2
-  const s2ColWidths = [5, 10, 22, 42, 18, 14, 14, 10, 14, 20, 18, 16, 12];
-  s2.columns.forEach((col, i) => { col.width = s2ColWidths[i] ?? 12; });
+  const totalRow = s2.addRow([
+    '', '', 'TỔNG CỘNG', '', '',
+    submissions.length ? `=SUM(F${DATA_START}:F${DATA_END})` : 0,
+    submissions.length ? `=SUM(G${DATA_START}:G${DATA_END})` : 0,
+    '',
+    submissions.length ? `=SUM(I${DATA_START}:I${DATA_END})` : 0,
+    '', '', '', '',
+  ]);
+  totalRow.height = 22;
+  totalRow.font   = { bold: true };
+  totalRow.fill   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF99' } };
+  totalRow.eachCell(c => { c.border = BORDER_THIN; });
+  [6, 7, 9].forEach(col => {
+    const c = totalRow.getCell(col);
+    c.numFmt    = '#,##0';
+    c.alignment = { horizontal: 'right', vertical: 'middle' };
+  });
+  totalRow.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
 
-  const buffer = await wb.xlsx.writeBuffer();
-  return buffer;
+  // ── Hàng BẰNG CHỮ ───────────────────────────────────────────────────────
+  const tongTatCa = tongCD + tongPL;
+  const bangChuRow = s2.addRow(['BẰNG CHỮ', soThanhChu(tongTatCa), '', '', '', '', '', '', '', '', '', '', '']);
+  bangChuRow.height = 20;
+  bangChuRow.getCell(1).font = { bold: true, italic: true };
+  bangChuRow.getCell(2).font = { italic: true };
+  bangChuRow.getCell(2).alignment = { horizontal: 'left', vertical: 'middle' };
+
+  // ── Hàng chữ ký ─────────────────────────────────────────────────────────
+  s2.addRow([]); // blank spacer
+  const sigRow = s2.addRow(['', 'NGƯỜI NHẬN TIỀN', '', '', 'NGƯỜI LẬP PHIẾU', '', '', '', '', 'CHỦ TỊCH CĐCS', '', '', '']);
+  sigRow.height = 20;
+  sigRow.getCell(2).font  = { bold: true };
+  sigRow.getCell(5).font  = { bold: true };
+  sigRow.getCell(10).font = { bold: true };
+  [2, 5, 10].forEach(col => {
+    sigRow.getCell(col).alignment = { horizontal: 'center' };
+  });
+
+  // ── Column widths ────────────────────────────────────────────────────────
+  const colWidths = [5, 10, 22, 46, 16, 14, 14, 10, 14, 22, 18, 26, 20];
+  s2.columns.forEach((col, i) => { col.width = colWidths[i] ?? 12; });
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
 }
