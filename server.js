@@ -4,8 +4,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { fillDocx } from './docxFiller.js';
 import { imagesToPdf } from './imagesToPdf.js';
-import { luuHoSo, convertDocxToPdf, uploadPdf, uploadJson, timHoSo, listSubmissionsByMonth } from './graph.js';
-import { generateExcel } from './exportExcel.js';
+import { luuHoSo, convertDocxToPdf, uploadPdf, uploadJson, uploadExcel, timHoSo, listSubmissionsByMonth, listSubmissionsByDateRange } from './graph.js';
+import { generateExcel, generateExcelFromTemplate } from './exportExcel.js';
 import { addCommentsToPdf } from './pdfAnnotator.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -197,32 +197,50 @@ app.get('/api/admin/verify', (req, res) => {
 });
 
 // ──────────────────────────────────────────────
-// GET /api/admin/export?month=MM&year=YYYY
+// GET /api/admin/export?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 // Header: X-Admin-Code
+// Folder lưu lấy theo tháng của endDate.
+// Trả về JSON { success, webUrl, folderWebUrl, filename, count }
 // ──────────────────────────────────────────────
 app.get('/api/admin/export', async (req, res) => {
+  res.setHeader('Content-Type', 'application/json');   // luôn trả JSON
+
   const code = req.headers['x-admin-code'];
   if (!code || code !== ADMIN_CODE) {
     return res.status(401).json({ error: 'Mã admin không đúng.' });
   }
 
-  const { month, year } = req.query;
-  if (!month || !year || !/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) {
-    return res.status(400).json({ error: 'Tháng/năm không hợp lệ.' });
+  const { startDate, endDate } = req.query;
+  const dateRe = /^\d{4}-\d{2}-\d{2}$/;
+  if (!startDate || !endDate || !dateRe.test(startDate) || !dateRe.test(endDate)) {
+    return res.status(400).json({ error: 'Ngày không hợp lệ. Định dạng: YYYY-MM-DD.' });
+  }
+  if (new Date(startDate) > new Date(endDate)) {
+    return res.status(400).json({ error: 'Ngày bắt đầu phải ≤ ngày kết thúc.' });
   }
 
   try {
-    const submissions  = await listSubmissionsByMonth(month, year);
-    const excelBuffer  = await generateExcel(submissions, month, year);
-    const mm = String(month).padStart(2, '0');
-    res.setHeader('Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition',
-      `attachment; filename="danh-sach-yeu-cau-T${mm}-${year}.xlsx"`);
-    res.send(excelBuffer);
+    // Folder & tiêu đề lấy tháng/năm của ngày kết thúc
+    const [yyyy, mm] = endDate.split('-');
+
+    const submissions = await listSubmissionsByDateRange(startDate, endDate);
+
+    const templatePath = path.join(__dirname, 'template_export.xlsx');
+    const excelBuffer  = await generateExcelFromTemplate(
+      submissions, parseInt(mm), parseInt(yyyy), templatePath
+    );
+
+    const filename    = `Tong-hop-phuc-loi-T${mm}-${yyyy}.xlsx`;
+    const monthFolder = `Thang-${mm}-${yyyy}`;
+
+    const { webUrl }   = await uploadExcel({ monthFolder, filename, buffer: excelBuffer });
+    // folderWebUrl = bỏ phần /TenFile ở cuối webUrl
+    const folderWebUrl = webUrl.substring(0, webUrl.lastIndexOf('/'));
+
+    res.json({ success: true, webUrl, folderWebUrl, filename, count: submissions.length });
   } catch (err) {
     console.error('Admin export error:', err);
-    res.status(500).json({ error: 'Có lỗi khi kết xuất. Vui lòng thử lại.' });
+    res.status(500).json({ error: err.message || 'Có lỗi khi kết xuất. Vui lòng thử lại.' });
   }
 });
 

@@ -33,61 +33,74 @@ const DRIVE_BASE = SITE_ID
 
 /**
  * Upload một file buffer vào SharePoint.
+ * Tự retry tối đa 3 lần khi gặp lỗi 423 resourceLocked (2s / 4s backoff).
  * Trả về { webUrl, driveId, itemId }.
  */
 async function uploadBuffer({ folderPath, filename, buffer, contentType = 'application/octet-stream' }) {
   const token = await getToken();
   const url   = `${DRIVE_BASE}/root:/${folderPath}/${filename}:/content`;
 
-  const res = await fetch(url, {
-    method:  'PUT',
-    headers: {
-      Authorization:  `Bearer ${token}`,
-      'Content-Type': contentType,
-    },
-    body: buffer,
-  });
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, {
+      method:  'PUT',
+      headers: {
+        Authorization:  `Bearer ${token}`,
+        'Content-Type': contentType,
+      },
+      body: buffer,
+    });
 
-  if (!res.ok) {
+    if (res.ok) {
+      const item = await res.json();
+      return {
+        webUrl:  item.webUrl,
+        driveId: item.parentReference?.driveId ?? DRIVE_ID,
+        itemId:  item.id,
+      };
+    }
+
+    // 423 = SharePoint folder/resource bị lock (thường do tạo folder đồng thời)
+    if (res.status === 423 && attempt < 2) {
+      const wait = (attempt + 1) * 3000;   // 3s → 6s (rộng hơn để SP kịp release lock)
+      console.warn(`[uploadBuffer] 423 resourceLocked – retry ${attempt + 1}/2 sau ${wait / 1000}s`);
+      await new Promise(r => setTimeout(r, wait));
+      continue;
+    }
+
     const text = await res.text();
     throw new Error(`Graph upload failed ${res.status}: ${text}`);
   }
-
-  const item = await res.json();
-  return {
-    webUrl:  item.webUrl,
-    driveId: item.parentReference?.driveId ?? DRIVE_ID,
-    itemId:  item.id,
-  };
 }
 
 // ──────────────────────────────────────────────
 // luuHoSo — Lưu docx + ảnh PDF lên SharePoint
+// Upload tuần tự (DOCX trước) để tránh race condition
+// khi SharePoint tạo folder → lỗi 423 resourceLocked.
 // Trả về { webUrl, driveId, docxItemId }
 // ──────────────────────────────────────────────
 export async function luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffer }) {
-  const uploadResults = await Promise.all([
-    uploadBuffer({
-      folderPath:  folderName,
-      filename:    docxName,
-      buffer:      docxBuffer,
-      contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    }),
-    imagesPdfBuffer
-      ? uploadBuffer({
-          folderPath:  folderName,
-          filename:    'chung-tu.pdf',
-          buffer:      imagesPdfBuffer,
-          contentType: 'application/pdf',
-        })
-      : null,
-  ]);
+  // 1) Upload DOCX — tạo folder luôn nếu chưa tồn tại
+  const docxResult = await uploadBuffer({
+    folderPath:  folderName,
+    filename:    docxName,
+    buffer:      docxBuffer,
+    contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  });
 
-  const docxResult = uploadResults[0];
+  // 2) Upload ảnh PDF sau khi folder đã chắc chắn tồn tại
+  if (imagesPdfBuffer) {
+    await uploadBuffer({
+      folderPath:  folderName,
+      filename:    'chung-tu.pdf',
+      buffer:      imagesPdfBuffer,
+      contentType: 'application/pdf',
+    });
+  }
+
   return {
-    webUrl:      docxResult.webUrl,
-    driveId:     docxResult.driveId,
-    docxItemId:  docxResult.itemId,
+    webUrl:     docxResult.webUrl,
+    driveId:    docxResult.driveId,
+    docxItemId: docxResult.itemId,
   };
 }
 
@@ -184,6 +197,60 @@ export async function uploadJson({ folderName, data, filename = 'meta.json' }) {
     buffer:      Buffer.from(JSON.stringify(data, null, 2)),
     contentType: 'application/json',
   });
+}
+
+// ──────────────────────────────────────────────
+// listSubmissionsByDateRange — Liệt kê hồ sơ theo khoảng ngày
+// startDateStr / endDateStr: "YYYY-MM-DD"
+// Lấy đủ tháng trong khoảng → lọc theo ngày_nop
+// ──────────────────────────────────────────────
+export async function listSubmissionsByDateRange(startDateStr, endDateStr) {
+  const start = new Date(startDateStr + 'T00:00:00');
+  const end   = new Date(endDateStr   + 'T23:59:59');
+
+  // Thu thập danh sách tháng trong khoảng
+  const months = [];
+  const mStart = new Date(start.getFullYear(), start.getMonth(), 1);
+  const mEnd   = new Date(end.getFullYear(),   end.getMonth(),   1);
+  for (let d = new Date(mStart); d <= mEnd; d.setMonth(d.getMonth() + 1)) {
+    months.push({
+      mm:   String(d.getMonth() + 1).padStart(2, '0'),
+      yyyy: String(d.getFullYear()),
+    });
+  }
+
+  // Gọi listSubmissionsByMonth cho mỗi tháng
+  const allSubs = [];
+  for (const { mm, yyyy } of months) {
+    const subs = await listSubmissionsByMonth(mm, yyyy);
+    allSubs.push(...subs);
+  }
+
+  // Lọc theo ngay_nop (định dạng "dd-mm-yyyy")
+  return allSubs
+    .filter(s => {
+      if (!s.ngay_nop) return true;
+      const parts = s.ngay_nop.split('-').map(Number);
+      if (parts.length !== 3) return true;
+      const [dd, mm, yyyy] = parts;
+      const subDate = new Date(yyyy, mm - 1, dd);
+      return subDate >= start && subDate <= end;
+    })
+    .sort((a, b) => (a.ten_cbcnv || '').localeCompare(b.ten_cbcnv || '', 'vi'));
+}
+
+// ──────────────────────────────────────────────
+// uploadExcel — Upload file Excel vào folder tháng
+// Trả về { webUrl }
+// ──────────────────────────────────────────────
+export async function uploadExcel({ monthFolder, filename, buffer }) {
+  const result = await uploadBuffer({
+    folderPath:  monthFolder,
+    filename,
+    buffer,
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  return { webUrl: result.webUrl };
 }
 
 // ──────────────────────────────────────────────

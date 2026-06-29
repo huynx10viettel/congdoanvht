@@ -11,7 +11,7 @@ export async function addCommentsToPdf(pdfBuffer) {
   const { width, height } = page.getSize();
 
   const iconSize = 18;                          // kích thước icon sticky note (pt)
-  const yPos     = Math.round(height * 0.14);  // ~14% từ dưới = vùng ký tên
+  const yPos     = Math.round(height * 0.18);  // ~18% từ dưới = dòng ký tên
   const colWidth = width / 3;                   // chia 3 cột đều
 
   for (let i = 0; i < 3; i++) {

@@ -1126,25 +1126,15 @@
         </div>
 
         <div id="admin-step-export" style="display:none">
-          <p class="card-subtitle">Chọn tháng/năm để kết xuất danh sách yêu cầu phúc lợi.</p>
+          <p class="card-subtitle">Chọn khoảng ngày để kết xuất danh sách yêu cầu phúc lợi.</p>
           <div style="margin-top:12px">
             <div class="card-field-group">
-              <label class="card-field-label">Tháng <span class="req">*</span></label>
-              <div class="card-select-wrap">
-                <select class="card-select" id="admin-month">
-                  <option value="" disabled selected>Chọn tháng</option>
-                  <option value="01">Tháng 1</option><option value="02">Tháng 2</option>
-                  <option value="03">Tháng 3</option><option value="04">Tháng 4</option>
-                  <option value="05">Tháng 5</option><option value="06">Tháng 6</option>
-                  <option value="07">Tháng 7</option><option value="08">Tháng 8</option>
-                  <option value="09">Tháng 9</option><option value="10">Tháng 10</option>
-                  <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
-                </select>
-              </div>
+              <label class="card-field-label">Từ ngày <span class="req">*</span></label>
+              <input class="card-input" id="admin-start-date" type="date" />
             </div>
             <div class="card-field-group">
-              <label class="card-field-label">Năm <span class="req">*</span></label>
-              <input class="card-input" id="admin-year" type="number" value="2026" min="2024" max="2035" placeholder="YYYY" />
+              <label class="card-field-label">Đến ngày <span class="req">*</span></label>
+              <input class="card-input" id="admin-end-date" type="date" />
             </div>
           </div>
           <div id="msg-admin-export" class="msg"></div>
@@ -1500,11 +1490,8 @@ async function submitForm() {
     const data = await res.json();
 
     if (data.success) {
-      const linkEl = document.getElementById('success-link');
-      let links = '';
-      if (data.webUrl)    links += `<a href="${data.webUrl}"    target="_blank">→ Mở thư mục trên SharePoint</a>`;
-      if (data.pdfWebUrl) links += `<a href="${data.pdfWebUrl}" target="_blank">→ Tải file PDF</a>`;
-      linkEl.innerHTML = links;
+      // Không hiển thị link SharePoint / PDF trên màn hình kết quả
+      document.getElementById('success-link').innerHTML = '';
       showScreen('screen-success');
     } else {
       showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
@@ -1589,9 +1576,13 @@ async function verifyAdminCode() {
       document.getElementById('admin-step-code').style.display   = 'none';
       document.getElementById('admin-step-export').style.display = 'block';
       msg.className = 'msg';
-      const now = new Date();
-      document.getElementById('admin-month').value = String(now.getMonth() + 1).padStart(2, '0');
-      document.getElementById('admin-year').value  = String(now.getFullYear());
+      // Mặc định: đầu tháng hiện tại → hôm nay
+      const now   = new Date();
+      const yyyy  = now.getFullYear();
+      const mm    = String(now.getMonth() + 1).padStart(2, '0');
+      const dd    = String(now.getDate()).padStart(2, '0');
+      document.getElementById('admin-start-date').value = `${yyyy}-${mm}-01`;
+      document.getElementById('admin-end-date').value   = `${yyyy}-${mm}-${dd}`;
     } else {
       showMsg(msg, '❌ Mã xác thực không đúng.');
     }
@@ -1601,15 +1592,16 @@ async function verifyAdminCode() {
 }
 
 async function doExport() {
-  const month = document.getElementById('admin-month').value;
-  const year  = document.getElementById('admin-year').value.trim();
-  const msg   = document.getElementById('msg-admin-export');
-  if (!month) return showMsg(msg, 'Vui lòng chọn tháng.');
-  if (!year || !/^\d{4}$/.test(year)) return showMsg(msg, 'Vui lòng nhập năm hợp lệ.');
+  const startDate = document.getElementById('admin-start-date').value;
+  const endDate   = document.getElementById('admin-end-date').value;
+  const msg       = document.getElementById('msg-admin-export');
+  if (!startDate) return showMsg(msg, 'Vui lòng chọn ngày bắt đầu.');
+  if (!endDate)   return showMsg(msg, 'Vui lòng chọn ngày kết thúc.');
+  if (startDate > endDate) return showMsg(msg, 'Ngày bắt đầu phải ≤ ngày kết thúc.');
   const btn = document.getElementById('btn-export');
   btn.disabled = true; btn.textContent = 'Đang tạo file...';
   try {
-    const res = await fetch(`/api/admin/export?month=${month}&year=${year}`, {
+    const res = await fetch(`/api/admin/export?startDate=${startDate}&endDate=${endDate}`, {
       headers: { 'X-Admin-Code': _adminCode },
     });
     if (res.status === 401) {
@@ -1623,9 +1615,13 @@ async function doExport() {
       return showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
     }
     const data = await res.json();
+    // Hiển thị tháng/năm từ endDate (YYYY-MM-DD)
+    const [ey, em] = endDate.split('-');
     msg.className = 'msg ok';
-    msg.innerHTML = `✅ Đã lưu ${data.count || 0} hồ sơ tháng ${parseInt(month)}/${year} vào SharePoint.`
-      + (data.webUrl ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở file</a>` : '');
+    msg.innerHTML = `✅ Đã xuất ${data.count || 0} hồ sơ (${startDate} → ${endDate}) vào SharePoint.`
+      + (data.folderWebUrl
+          ? ` <a href="${data.folderWebUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở thư mục T${em}/${ey}</a>`
+          : (data.webUrl ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở file</a>` : ''));
   } catch (err) {
     showMsg(msg, '❌ Lỗi: ' + err.message);
   } finally {

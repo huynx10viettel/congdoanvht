@@ -145,6 +145,101 @@ const BORDER_THIN = {
   right:  { style: 'thin' },
 };
 
+// ── generateExcelFromTemplate ────────────────────────────────────────────────
+// Clone template_export.xlsx, điền data submissions vào sheet
+// "CD - PL in cho ký nhận" bằng giá trị tĩnh (không dùng formula).
+// Template có 4 data rows (8–11) → splice ra, splice n rows mới vào.
+// ─────────────────────────────────────────────────────────────────────────────
+export async function generateExcelFromTemplate(submissions, thang, nam, templatePath) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(templatePath);
+
+  const ws = wb.getWorksheet('CD - PL in cho ký nhận');
+  if (!ws) throw new Error('Không tìm thấy sheet "CD - PL in cho ký nhận" trong template');
+
+  const yyyy = String(nam);
+
+  // 1. Ghi đè tiêu đề (A4 và A5 là merged cell có formula → ghi value tĩnh)
+  ws.getCell('A4').value = `DANH SÁCH CHI TIỀN CÔNG ĐOÀN PHÚC LỢI THÁNG ${parseInt(thang)} ${yyyy}`;
+  ws.getCell('A5').value = `(Kèm theo phiếu chi số PC_CĐCS số              ngày    /    /${yyyy})`;
+
+  // 2. Xoá 4 data rows của template (rows 8–11)
+  const DATA_START           = 8;
+  const TEMPLATE_DATA_COUNT  = 4;
+  ws.spliceRows(DATA_START, TEMPLATE_DATA_COUNT);
+  // Sau bước này: TỔNG CỘNG ở row 8, BẰNG CHỮ ở row 9
+
+  // 3. Chèn n data rows tại row 8
+  const n = submissions.length;
+  if (n > 0) {
+    const dataArrays = submissions.map((s, i) => {
+      const amounts = LOAI_AMOUNTS[s.loai_phuc_loi] || { cd: 0, pl: 0 };
+      return [
+        i + 1,
+        s.ma_nv      || '',
+        s.ten_cbcnv  || '',
+        buildNoiDung(s),
+        s.don_vi     || '',
+        amounts.cd,
+        amounts.pl,
+        '',                         // THUẾ TNCN
+        amounts.cd + amounts.pl,    // THỰC NHẬN
+        buildHoTen(s),
+        buildQuanHe(s),
+        buildHoSo(s),
+        '',                         // KÝ NHẬN
+      ];
+    });
+    ws.spliceRows(DATA_START, 0, ...dataArrays);
+  }
+
+  // 4. Áp dụng format cho các data row mới chèn vào
+  let tongCD = 0, tongPL = 0;
+  for (let i = 0; i < n; i++) {
+    const s       = submissions[i];
+    const amounts = LOAI_AMOUNTS[s.loai_phuc_loi] || { cd: 0, pl: 0 };
+    tongCD += amounts.cd;
+    tongPL += amounts.pl;
+
+    const row = ws.getRow(DATA_START + i);
+    row.height = 22;
+
+    for (let c = 1; c <= 13; c++) {
+      const cell = row.getCell(c);
+      cell.border    = BORDER_THIN;
+      cell.alignment = { vertical: 'middle', wrapText: true };
+    }
+    // Số tiền — căn phải + format
+    [6, 7, 9].forEach(col => {
+      const cell = row.getCell(col);
+      cell.numFmt    = '#,##0';
+      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+    row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
+    row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
+    row.getCell(4).alignment = { wrapText: true, vertical: 'middle' };
+  }
+
+  // 5. Cập nhật TỔNG CỘNG (bây giờ ở row DATA_START + n)
+  const totalRowIdx = DATA_START + n;
+  const totalRow    = ws.getRow(totalRowIdx);
+  totalRow.getCell(6).value = tongCD;
+  totalRow.getCell(7).value = tongPL;
+  totalRow.getCell(8).value = '';
+  totalRow.getCell(9).value = tongCD + tongPL;
+  [6, 7, 9].forEach(col => {
+    const c = totalRow.getCell(col);
+    c.numFmt    = '#,##0';
+    c.alignment = { horizontal: 'right', vertical: 'middle' };
+  });
+
+  // 6. Cập nhật BẰNG CHỮ (row DATA_START + n + 1)
+  const bangChuRow = ws.getRow(totalRowIdx + 1);
+  bangChuRow.getCell(2).value = soThanhChu(tongCD + tongPL);
+
+  return Buffer.from(await wb.xlsx.writeBuffer());
+}
+
 // ── generateExcel ────────────────────────────────────────────────────────────
 export async function generateExcel(submissions, thang, nam) {
   const wb = new ExcelJS.Workbook();
