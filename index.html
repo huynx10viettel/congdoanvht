@@ -172,7 +172,7 @@
       padding: 0 max(24px, calc((100% - 1296px) / 2));
       display: flex; align-items: center; justify-content: space-between;
       height: 104px;
-      position: relative; overflow: hidden;
+      position: relative;
     }
     .fh-left { display: flex; align-items: center; gap: 24px; z-index: 1; }
     .fh-logo-fallback { display: flex; flex-direction: column; }
@@ -617,7 +617,7 @@
           </button>
         </div>
         <div class="fh-hero">
-          <img src="hero-form.png" alt="" onerror="this.parentElement.style.display='none'">
+          <img src="hero.png" alt="" onerror="this.parentElement.style.display='none'">
         </div>
       </div>
 
@@ -715,7 +715,7 @@
                 </div>
                 <div class="field-row">
                   <div class="field-group">
-                    <label class="field-label">Cơ sở điều trị <span class="req">*</span></label>
+                    <label class="field-label">Cơ sở điều trị</label>
                     <input class="field-input" id="benh_vien" placeholder="Nhập tên bệnh viện đầy đủ" />
                   </div>
                   <div class="field-group">
@@ -742,7 +742,7 @@
               <div id="s2-om-cbnv" style="display:none">
                 <div class="field-row">
                   <div class="field-group">
-                    <label class="field-label">Cơ sở điều trị <span class="req">*</span></label>
+                    <label class="field-label">Cơ sở điều trị</label>
                     <input class="field-input" id="benh_vien_cbnv" placeholder="Nhập tên bệnh viện đầy đủ" />
                   </div>
                   <div class="field-group">
@@ -1244,12 +1244,8 @@ function goToStep3Form() {
       return showMsg(msg, 'Vui lòng chọn thân nhân.');
     if (!document.getElementById('ten_nguoi_than').value.trim())
       return showMsg(msg, 'Vui lòng nhập họ tên thân nhân.');
-    if (!document.getElementById('benh_vien').value.trim())
-      return showMsg(msg, 'Vui lòng nhập cơ sở điều trị.');
   }
   if (currentType === 'tham-hoi-om-cbnv') {
-    if (!document.getElementById('benh_vien_cbnv').value.trim())
-      return showMsg(msg, 'Vui lòng nhập cơ sở điều trị.');
   }
   if (currentType === 'tham-vieng-thannhan') {
     if (!document.getElementById('qh_than_nhan_tv').value)
