@@ -55,6 +55,9 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       so_giay_ket_hon,
       ten_con,
       so_giay_khai_sinh,
+      loai_giay_to,
+      so_giay_to,
+      ngay_giay_to,
     } = req.body;
 
     // nguoi_de_nghi falls back to chuc_vu_de_nghi
@@ -75,6 +78,9 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
     const nam   = String(now.getFullYear());
 
     const templatePath = path.join(__dirname, templateFile);
+
+    // Cấu trúc thư mục: Thang-MM-YYYY / TenNV_MaNV_dd-mm-yyyy
+    const monthFolder = `Thang-${thang}-${nam}`;
 
     const data = {
       nguoi_de_nghi,
@@ -101,7 +107,8 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
 
     // Fill docx
     const docxBuffer = fillDocx(templatePath, data);
-    const folderName = `${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}`;
+    const subFolder  = `${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}`;
+    const folderName = `${monthFolder}/${subFolder}`;   // Thang-MM-YYYY/TenNV_MaNV_dd-mm-yyyy
     const docxName   = `De-nghi-phuc-loi_${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}.docx`;
 
     // Ảnh / PDF đính kèm → merge PDF
@@ -130,6 +137,9 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
         so_giay_ket_hon:   so_giay_ket_hon   || '',
         ten_con:           ten_con           || '',
         so_giay_khai_sinh: so_giay_khai_sinh || '',
+        loai_giay_to:      loai_giay_to      || '',
+        so_giay_to:        so_giay_to        || '',
+        ngay_giay_to:      ngay_giay_to      || '',
         ngay_nop: `${ngay}-${thang}-${nam}`,
       },
     }).catch(e => console.error('meta.json upload failed (non-fatal):', e.message));

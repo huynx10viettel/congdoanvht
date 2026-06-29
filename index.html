@@ -719,12 +719,23 @@
                     <input class="field-input" id="benh_vien" placeholder="Nhập tên bệnh viện đầy đủ" />
                   </div>
                   <div class="field-group">
-                    <label class="field-label">Ngày</label>
+                    <label class="field-label">Ngày ra viện / xác nhận <span class="req">*</span></label>
                     <input class="field-input" id="ngay_om_thannhan" type="date" />
                   </div>
                 </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_om_thannhan">
+                        <option value="giay-ra-vien" selected>Giấy ra viện</option>
+                        <option value="giay-xac-nhan-nam-vien">Giấy xác nhận nằm viện</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 <div class="field-group">
-                  <label class="field-label">Hồ sơ đính kèm (Giấy ra viện/giấy chứng nhận phẫu thuật...) <span class="req">*</span></label>
+                  <label class="field-label">Hồ sơ đính kèm <span class="req">*</span></label>
                   <button type="button" class="upload-btn" onclick="document.getElementById('file-om-thannhan').click()">
                     <span class="ub-left">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l2-4 3 3 3-5 4 6H2z" stroke="#44494d" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -746,12 +757,23 @@
                     <input class="field-input" id="benh_vien_cbnv" placeholder="Nhập tên bệnh viện đầy đủ" />
                   </div>
                   <div class="field-group">
-                    <label class="field-label">Ngày</label>
+                    <label class="field-label">Ngày ra viện / xác nhận <span class="req">*</span></label>
                     <input class="field-input" id="ngay_om_cbnv" type="date" />
                   </div>
                 </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_om_cbnv">
+                        <option value="giay-ra-vien" selected>Giấy ra viện</option>
+                        <option value="giay-xac-nhan-nam-vien">Giấy xác nhận nằm viện</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
                 <div class="field-group">
-                  <label class="field-label">Hồ sơ đính kèm (Giấy ra viện/giấy chứng nhận phẫu thuật...) <span class="req">*</span></label>
+                  <label class="field-label">Hồ sơ đính kèm <span class="req">*</span></label>
                   <button type="button" class="upload-btn" onclick="document.getElementById('file-om-cbnv').click()">
                     <span class="ub-left">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l2-4 3 3 3-5 4 6H2z" stroke="#44494d" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -767,12 +789,27 @@
 
               <!-- Kết hôn -->
               <div id="s2-ket-hon" style="display:none">
-                <div class="field-group">
-                  <label class="field-label">Ngày</label>
-                  <input class="field-input" id="ngay_cuoi" type="date" style="max-width:200px" />
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_ket_hon" onchange="onKetHonGiayToChange()">
+                        <option value="thiep-cuoi" selected>Thiệp cưới</option>
+                        <option value="giay-dang-ky-ket-hon">Giấy đăng ký kết hôn</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-group" id="row-ngay-cuoi">
+                    <label class="field-label">Ngày cưới</label>
+                    <input class="field-input" id="ngay_cuoi" type="date" />
+                  </div>
+                </div>
+                <div class="field-group" id="row-so-giay-ket-hon" style="display:none">
+                  <label class="field-label">Số giấy đăng ký kết hôn</label>
+                  <input class="field-input" id="so_giay_ket_hon_new" placeholder="Nhập số giấy đăng ký kết hôn" style="max-width:300px" />
                 </div>
                 <div class="field-group">
-                  <label class="field-label">Hồ sơ đính kèm (Thiệp cưới, đăng ký kết hôn) <span class="req">*</span></label>
+                  <label class="field-label">Hồ sơ đính kèm <span class="req">*</span></label>
                   <button type="button" class="upload-btn" onclick="document.getElementById('file-ket-hon').click()">
                     <span class="ub-left">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l2-4 3 3 3-5 4 6H2z" stroke="#44494d" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -798,8 +835,23 @@
                     <input class="field-input" id="ngay_sinh_con" type="date" />
                   </div>
                 </div>
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_sinh_con">
+                        <option value="giay-khai-sinh" selected>Giấy khai sinh</option>
+                        <option value="giay-chung-sinh">Giấy chứng sinh</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Số giấy tờ</label>
+                    <input class="field-input" id="so_giay_sinh_con" placeholder="VD: 001/2026" />
+                  </div>
+                </div>
                 <div class="field-group">
-                  <label class="field-label">Hồ sơ đính kèm (Giấy khai sinh...) <span class="req">*</span></label>
+                  <label class="field-label">Hồ sơ đính kèm <span class="req">*</span></label>
                   <button type="button" class="upload-btn" onclick="document.getElementById('file-sinh-con').click()">
                     <span class="ub-left">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l2-4 3 3 3-5 4 6H2z" stroke="#44494d" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -815,9 +867,19 @@
 
               <!-- Thăm viếng CBNV -->
               <div id="s2-tv-cbnv" style="display:none">
-                <div class="field-group">
-                  <label class="field-label">Ngày</label>
-                  <input class="field-input" id="ngay_tv_cbnv" type="date" style="max-width:200px" />
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_tv_cbnv">
+                        <option value="cao-pho" selected>Cáo phó</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Ngày</label>
+                    <input class="field-input" id="ngay_tv_cbnv" type="date" style="max-width:200px" />
+                  </div>
                 </div>
                 <div class="field-group">
                   <label class="field-label">Hồ sơ đính kèm (Cáo phó) <span class="req">*</span></label>
@@ -853,12 +915,22 @@
                     <input class="field-input" id="ten_than_nhan" placeholder="Nhập họ và tên thân nhân" />
                   </div>
                 </div>
-                <div class="field-group">
-                  <label class="field-label">Ngày</label>
-                  <input class="field-input" id="ngay_tv_thannhan" type="date" style="max-width:200px" />
+                <div class="field-row">
+                  <div class="field-group">
+                    <label class="field-label">Loại giấy tờ kèm theo <span class="req">*</span></label>
+                    <div class="field-select-wrap">
+                      <select class="field-select" id="loai_giay_to_tv_thannhan">
+                        <option value="cao-pho" selected>Cáo phó</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Ngày</label>
+                    <input class="field-input" id="ngay_tv_thannhan" type="date" style="max-width:200px" />
+                  </div>
                 </div>
                 <div class="field-group">
-                  <label class="field-label">Hồ sơ đính kèm (Giấy ra viện/giấy chứng nhận phẫu thuật...) <span class="req">*</span></label>
+                  <label class="field-label">Hồ sơ đính kèm (Cáo phó) <span class="req">*</span></label>
                   <button type="button" class="upload-btn" onclick="document.getElementById('file-tv-thannhan').click()">
                     <span class="ub-left">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 12l2-4 3 3 3-5 4 6H2z" stroke="#44494d" stroke-width="1.3" stroke-linejoin="round"/></svg>
@@ -1188,6 +1260,20 @@ function getDonViValue() {
   return sel.value;
 }
 
+// ─── Toggle số giấy kết hôn khi đổi loại giấy tờ ────────────────────────────
+function onKetHonGiayToChange() {
+  const val = document.getElementById('loai_giay_to_ket_hon')?.value;
+  const soRow   = document.getElementById('row-so-giay-ket-hon');
+  const ngayRow = document.getElementById('row-ngay-cuoi');
+  if (val === 'giay-dang-ky-ket-hon') {
+    soRow.style.display   = '';
+    ngayRow.style.display = 'none';
+  } else {
+    soRow.style.display   = 'none';
+    ngayRow.style.display = '';
+  }
+}
+
 // ─── Step 2: show correct sub-form ───────────────────────────────────────────
 const S2_MAP = {
   'tham-hoi-om-cbnv':      's2-om-cbnv',
@@ -1368,29 +1454,35 @@ async function submitForm() {
 
     // Step 2 fields
     const fMap = {
-      'tham-hoi-om-cbnv':     { benh_vien: 'benh_vien_cbnv', ngay: 'ngay_om_cbnv' },
-      'tham-hoi-om-thannhan': { benh_vien: 'benh_vien', ngay: 'ngay_om_thannhan', qh: 'qh_than_nhan_om', ten_than: 'ten_nguoi_than' },
-      'ket-hon':               { ngay: 'ngay_cuoi' },
-      'sinh-con':              { ten_con: 'ten_con', ngay: 'ngay_sinh_con' },
-      'tham-vieng-cbnv':      { ngay: 'ngay_tv_cbnv' },
-      'tham-vieng-thannhan':  { qh: 'qh_than_nhan_tv', ten_than: 'ten_than_nhan', ngay: 'ngay_tv_thannhan' },
+      'tham-hoi-om-cbnv':     { benh_vien: 'benh_vien_cbnv', ngay: 'ngay_om_cbnv',      loai_gt: 'loai_giay_to_om_cbnv' },
+      'tham-hoi-om-thannhan': { benh_vien: 'benh_vien',      ngay: 'ngay_om_thannhan',   loai_gt: 'loai_giay_to_om_thannhan', qh: 'qh_than_nhan_om', ten_than: 'ten_nguoi_than' },
+      'ket-hon':              { ngay: 'ngay_cuoi',            loai_gt: 'loai_giay_to_ket_hon', so_gt: 'so_giay_ket_hon_new' },
+      'sinh-con':             { ten_con: 'ten_con',           ngay: 'ngay_sinh_con',       loai_gt: 'loai_giay_to_sinh_con',   so_gt: 'so_giay_sinh_con' },
+      'tham-vieng-cbnv':      { ngay: 'ngay_tv_cbnv',                                       loai_gt: 'loai_giay_to_tv_cbnv' },
+      'tham-vieng-thannhan':  { qh: 'qh_than_nhan_tv',       ten_than: 'ten_than_nhan',   ngay: 'ngay_tv_thannhan',  loai_gt: 'loai_giay_to_tv_thannhan' },
     };
     const fm = fMap[currentType] || {};
 
-    const qhVal  = fm.qh    ? document.getElementById(fm.qh)?.value || '' : '';
-    const tenThan = fm.ten_than ? document.getElementById(fm.ten_than)?.value.trim() || '' : '';
+    const qhVal   = fm.qh        ? document.getElementById(fm.qh)?.value         || '' : '';
+    const tenThan = fm.ten_than  ? document.getElementById(fm.ten_than)?.value.trim() || '' : '';
     const bv      = fm.benh_vien ? document.getElementById(fm.benh_vien)?.value.trim() || '' : '';
-    const tenCon  = fm.ten_con   ? document.getElementById(fm.ten_con)?.value.trim() || '' : '';
+    const tenCon  = fm.ten_con   ? document.getElementById(fm.ten_con)?.value.trim()  || '' : '';
+    const loaiGT  = fm.loai_gt   ? document.getElementById(fm.loai_gt)?.value     || '' : '';
+    const soGT    = fm.so_gt     ? document.getElementById(fm.so_gt)?.value.trim() || '' : '';
 
     fd.append('qh_than_nhan',   qhVal);
     fd.append('ten_nguoi_than', tenThan);
     fd.append('benh_vien',      bv);
     fd.append('ten_con',        tenCon);
+    fd.append('loai_giay_to',   loaiGT);
+    fd.append('so_giay_to',     soGT);
 
-    const ngayEl = fm.ngay ? document.getElementById(fm.ngay) : null;
-    fd.append('ngay_cuoi',          currentType === 'ket-hon'   ? (ngayEl?.value || '') : '');
-    fd.append('so_giay_ket_hon',    '');
-    fd.append('so_giay_khai_sinh',  '');
+    const ngayEl  = fm.ngay ? document.getElementById(fm.ngay) : null;
+    const ngayGT  = ngayEl?.value || '';
+    fd.append('ngay_giay_to',        ngayGT);
+    fd.append('ngay_cuoi',           currentType === 'ket-hon' ? ngayGT : '');
+    fd.append('so_giay_ket_hon',     '');
+    fd.append('so_giay_khai_sinh',   '');
     fd.append('ghi_chu_1', '');
     fd.append('ghi_chu_2', '');
     fd.append('ghi_chu_3', '');

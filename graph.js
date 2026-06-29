@@ -119,38 +119,46 @@ export async function convertDocxToPdf(driveId, itemId) {
 // ──────────────────────────────────────────────
 export async function timHoSo(maNV) {
   const token = await getToken();
-  // Liệt kê children của root, lọc theo tên chứa _maNV_
-  const url = `${DRIVE_BASE}/root/children?$select=name,webUrl,folder,createdDateTime&$top=200`;
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Graph list failed ${res.status}: ${text}`);
+  // 1. Lấy danh sách folder tháng ở root (dạng Thang-MM-YYYY)
+  const rootUrl = `${DRIVE_BASE}/root/children?$select=name,folder&$top=200`;
+  const rootRes = await fetch(rootUrl, { headers: { Authorization: `Bearer ${token}` } });
+  if (!rootRes.ok) {
+    const text = await rootRes.text();
+    throw new Error(`Graph list root failed ${rootRes.status}: ${text}`);
   }
+  const rootData  = await rootRes.json();
+  const monthFolders = (rootData.value || []).filter(
+    item => item.folder && /^Thang-\d{2}-\d{4}$/.test(item.name)
+  );
 
-  const data = await res.json();
-  const pattern = new RegExp(`_${maNV}_`);
+  // 2. Song song: tìm submission folder khớp _maNV_ trong mỗi folder tháng
+  const pattern   = new RegExp(`_${maNV}_`);
+  const allMatches = [];
 
-  return (data.value || [])
-    .filter(item => item.folder && pattern.test(item.name))
-    .map(item => {
-      // Tách tên folder: TenNV_maNV_ngay-thang-nam
-      const parts = item.name.split('_');
-      const tenNV = parts.slice(0, parts.length - 2).join('_');
-      const date  = parts[parts.length - 1]; // "dd-mm-yyyy"
-      return {
-        tenNV,
-        maNV,
-        ngayNop: date,    // "15-06-2026"
-        tenFolder: item.name,
-        webUrl: item.webUrl,
-        createdDateTime: item.createdDateTime,
-      };
-    })
-    .sort((a, b) => new Date(b.createdDateTime) - new Date(a.createdDateTime));
+  await Promise.all(monthFolders.map(async mf => {
+    const url = `${DRIVE_BASE}/root:/${mf.name}:/children?$select=name,webUrl,folder,createdDateTime&$top=200`;
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.value || [])
+      .filter(item => item.folder && pattern.test(item.name))
+      .forEach(item => {
+        const parts = item.name.split('_');
+        const tenNV = parts.slice(0, parts.length - 2).join('_');
+        const date  = parts[parts.length - 1];
+        allMatches.push({
+          tenNV,
+          maNV,
+          ngayNop:         date,
+          tenFolder:       `${mf.name}/${item.name}`,
+          webUrl:          item.webUrl,
+          createdDateTime: item.createdDateTime,
+        });
+      });
+  }));
+
+  return allMatches.sort((a, b) => new Date(b.createdDateTime) - new Date(a.createdDateTime));
 }
 
 // ──────────────────────────────────────────────
@@ -204,43 +212,37 @@ async function readMetaFromFolder(folderName) {
 // nếu submission cũ không có meta.json)
 // ──────────────────────────────────────────────
 export async function listSubmissionsByMonth(thang, nam) {
-  const token = await getToken();
-  const url = `${DRIVE_BASE}/root/children?$select=name,webUrl,folder,createdDateTime&$top=500`;
+  const token      = await getToken();
+  const mm         = String(thang).padStart(2, '0');
+  const yyyy       = String(nam);
+  const monthFolder = `Thang-${mm}-${yyyy}`;
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  // List children của folder tháng (Thang-MM-YYYY)
+  const url = `${DRIVE_BASE}/root:/${monthFolder}:/children?$select=name,webUrl,folder,createdDateTime&$top=500`;
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+
   if (!res.ok) {
+    if (res.status === 404) return []; // folder tháng chưa tồn tại
     const text = await res.text();
     throw new Error(`Graph list failed ${res.status}: ${text}`);
   }
 
-  const body = await res.json();
-  const mm   = String(thang).padStart(2, '0');
-  const yyyy = String(nam);
-
-  // Lọc folder có ngày khớp tháng/năm: tên dạng TenNV_MaNV_dd-mm-yyyy
-  const matching = (body.value || []).filter(item => {
-    if (!item.folder) return false;
-    const parts = item.name.split('_');
-    if (parts.length < 3) return false;
-    const dateParts = parts[parts.length - 1].split('-');
-    return dateParts.length === 3 && dateParts[1] === mm && dateParts[2] === yyyy;
-  });
+  const body     = await res.json();
+  const matching = (body.value || []).filter(item => item.folder);
 
   if (matching.length === 0) return [];
 
   // Đọc meta.json từng folder song song
   const submissions = await Promise.all(
     matching.map(async folder => {
-      const meta = await readMetaFromFolder(folder.name);
+      const meta = await readMetaFromFolder(`${monthFolder}/${folder.name}`);
       if (meta) return meta;
       // Fallback: tái tạo từ tên folder
-      const parts  = folder.name.split('_');
+      const parts = folder.name.split('_');
       return {
-        ten_cbcnv:    parts.slice(0, parts.length - 2).join('_'),
-        ma_nv:        parts[parts.length - 2],
-        ngay_nop:     parts[parts.length - 1],
+        ten_cbcnv:     parts.slice(0, parts.length - 2).join('_'),
+        ma_nv:         parts[parts.length - 2],
+        ngay_nop:      parts[parts.length - 1],
         loai_phuc_loi: '',
         don_vi:        '',
         chuc_danh:     '',
