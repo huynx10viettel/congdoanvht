@@ -230,7 +230,10 @@ app.get('/api/admin/export', async (req, res) => {
       submissions, parseInt(mm), parseInt(yyyy), templatePath
     );
 
-    const filename    = `Tong-hop-phuc-loi-T${mm}-${yyyy}.xlsx`;
+    // Thêm timestamp vào tên file để phân biệt các lần xuất
+    const now = new Date();
+    const ts  = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${now.getFullYear()}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+    const filename    = `Tong-hop-phuc-loi-T${mm}-${yyyy}_${ts}.xlsx`;
     const monthFolder = `Thang-${mm}-${yyyy}`;
 
     const { webUrl }   = await uploadExcel({ monthFolder, filename, buffer: excelBuffer });

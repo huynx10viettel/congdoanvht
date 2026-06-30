@@ -1,13 +1,14 @@
 import ExcelJS from 'exceljs';
 
-// ── Mức tiền theo template gốc (cột F=CÔNG ĐOÀN, cột G=PHÚC LỢI) ───────────
+// ── Mức tiền theo template gốc (cột F=CÔNG ĐOÀN=cd, cột G=PHÚC LỢI=pl) ─────
+// Giá trị khớp với template_export.xlsx (C6=CĐ, C7=PL)
 const LOAI_AMOUNTS = {
-  'tham-hoi-om-cbnv':    { cd:   500_000, pl: 1_000_000 },
-  'tham-hoi-om-thannhan':{ cd:   500_000, pl: 1_000_000 },
-  'ket-hon':             { cd: 1_000_000, pl: 1_500_000 },
-  'sinh-con':            { cd: 1_000_000, pl: 1_500_000 },
-  'tham-vieng-cbnv':     { cd: 1_500_000, pl: 2_500_000 },
-  'tham-vieng-thannhan': { cd: 1_500_000, pl: 2_000_000 },
+  'tham-hoi-om-cbnv':    { cd: 1_000_000, pl:   500_000 },
+  'tham-hoi-om-thannhan':{ cd: 1_000_000, pl:   500_000 },
+  'ket-hon':             { cd: 1_500_000, pl: 1_000_000 },
+  'sinh-con':            { cd: 1_500_000, pl: 1_000_000 },
+  'tham-vieng-cbnv':     { cd: 2_500_000, pl: 1_500_000 },
+  'tham-vieng-thannhan': { cd: 2_000_000, pl: 1_500_000 },
 };
 
 // ── Chuyển số thành chữ tiếng Việt ──────────────────────────────────────────
@@ -163,9 +164,10 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   ws.getCell('A4').value = `DANH SÁCH CHI TIỀN CÔNG ĐOÀN PHÚC LỢI THÁNG ${parseInt(thang)} ${yyyy}`;
   ws.getCell('A5').value = `(Kèm theo phiếu chi số PC_CĐCS số              ngày    /    /${yyyy})`;
 
-  // 2. Xoá 4 data rows của template (rows 8–11)
+  // 2. Xoá 7 data rows của template (rows 8–14)
+  // Template có 7 mẫu: R8 (placeholder), R9-R14 (sample data)
   const DATA_START           = 8;
-  const TEMPLATE_DATA_COUNT  = 4;
+  const TEMPLATE_DATA_COUNT  = 7;
   ws.spliceRows(DATA_START, TEMPLATE_DATA_COUNT);
   // Sau bước này: TỔNG CỘNG ở row 8, BẰNG CHỮ ở row 9
 
@@ -234,8 +236,9 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   });
 
   // 6. Cập nhật BẰNG CHỮ (row DATA_START + n + 1)
+  // Template: C1='BẰNG CHỮ', C6=giá trị chữ (cột F, không phải B)
   const bangChuRow = ws.getRow(totalRowIdx + 1);
-  bangChuRow.getCell(2).value = soThanhChu(tongCD + tongPL);
+  bangChuRow.getCell(6).value = soThanhChu(tongCD + tongPL);
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
