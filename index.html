@@ -1617,13 +1617,45 @@ async function doExport() {
   if (!startDate) return showMsg(msg, 'Vui lòng chọn ngày bắt đầu.');
   if (!endDate)   return showMsg(msg, 'Vui lòng chọn ngày kết thúc.');
   if (startDate > endDate) return showMsg(msg, 'Ngày bắt đầu phải ≤ ngày kết thúc.');
+
   const btn = document.getElementById('btn-export');
   btn.disabled = true;
-  btn.innerHTML = '<span class="loading-ring" style="width:18px;height:18px;border-width:2.5px;display:inline-block;vertical-align:middle;margin-right:6px"></span>Đang tạo file...';
+  btn.textContent = 'Tạo file tổng hợp';
+
+  // ── Fake progress trong msg box ──────────────────────────────────────────
+  const STAGES = [
+    { pct: 10, label: 'Đang tổng hợp danh sách hồ sơ...' },
+    { pct: 30, label: 'Đang tạo file Excel...' },
+    { pct: 55, label: 'Đang chuyển đổi sang PDF...' },
+    { pct: 75, label: 'Đang thêm chú thích vào PDF...' },
+    { pct: 90, label: 'Đang copy hồ sơ vào thư mục...' },
+    { pct: 97, label: 'Đang hoàn tất...' },
+  ];
+  let pct = 0, stageIdx = 0;
+
+  function renderProgress() {
+    const stage = STAGES[Math.min(stageIdx, STAGES.length - 1)];
+    msg.className = 'msg';
+    msg.style.cssText = 'display:flex;align-items:center;gap:10px;background:#f0f7ff;border:1px solid #b3d4f5;border-radius:10px;padding:12px 14px;color:#1a5e96;font-size:14px';
+    msg.innerHTML = `<span class="loading-ring" style="width:18px;height:18px;border-width:2.5px;flex-shrink:0"></span>`
+      + `<span><span style="font-weight:600">${stage.label}</span> <span style="color:#555">(${pct}%)</span></span>`;
+  }
+
+  function advanceProgress() {
+    const target = STAGES[Math.min(stageIdx, STAGES.length - 1)].pct;
+    if (pct < target) { pct = Math.min(pct + 1, target); renderProgress(); }
+    else if (stageIdx < STAGES.length - 1) { stageIdx++; }
+  }
+
+  renderProgress();
+  const timer = setInterval(advanceProgress, 350);
+
   try {
     const res = await fetch(`/api/admin/export?startDate=${startDate}&endDate=${endDate}`, {
       headers: { 'X-Admin-Code': _adminCode },
     });
+    clearInterval(timer);
+
     if (res.status === 401) {
       _adminCode = '';
       document.getElementById('admin-step-code').style.display   = 'block';
@@ -1632,11 +1664,11 @@ async function doExport() {
     }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
+      msg.style.cssText = '';
       return showMsg(msg, '❌ ' + (data.error || 'Có lỗi xảy ra.'));
     }
     const data = await res.json();
-    // Hiển thị tháng/năm từ endDate (YYYY-MM-DD)
-    const [ey, em] = endDate.split('-');
+    msg.style.cssText = '';
     msg.className = 'msg ok';
     msg.innerHTML = `✅ Đã xuất ${data.count || 0} hồ sơ (${startDate} → ${endDate}) vào SharePoint.`
       + (data.webUrl
@@ -1644,6 +1676,8 @@ async function doExport() {
           : '')
       + ` &nbsp;<a href="https://w0tks.sharepoint.com/sites/PLCDVHT" target="_blank" rel="noopener" style="color:#555;font-size:13px">📂 Thư mục</a>`;
   } catch (err) {
+    clearInterval(timer);
+    msg.style.cssText = '';
     showMsg(msg, '❌ Lỗi: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = 'Tạo file tổng hợp';
