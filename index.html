@@ -678,7 +678,7 @@
               </div>
               <div id="msg1" class="msg"></div>
               <div class="form-actions" style="margin-top:12px">
-                <button class="btn-next" onclick="goToStep2Form()">
+                <button class="btn-next" id="btn-step1-next" disabled onclick="goToStep2Form()">
                   Tiếp tục
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M5 2l5 5-5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -948,7 +948,7 @@
               <div id="msg2" class="msg"></div>
               <div class="form-actions">
                 <button class="btn-prev" onclick="goToStep1Form()">Trước</button>
-                <button class="btn-next" onclick="goToStep3Form()">
+                <button class="btn-next" id="btn-step2-next" disabled onclick="goToStep3Form()">
                   Tiếp tục
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path d="M5 2l5 5-5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1279,6 +1279,7 @@ function showStep2SubForm() {
   all.forEach(id => document.getElementById(id).style.display = 'none');
   const target = S2_MAP[currentType];
   if (target) document.getElementById(target).style.display = 'block';
+  updateStep2Btn(); // reset disabled state theo type mới
 }
 
 // ─── Navigation ──────────────────────────────────────────────────────────────
@@ -1344,6 +1345,11 @@ function goToStep3Form() {
     if (!document.getElementById('ngay_tv_thannhan').value)
       return showMsg(msg, 'Vui lòng nhập ngày.');
   }
+
+  // Validate file upload (bắt buộc với tất cả loại)
+  const _fileKey = (S2_MAP[currentType] || '').replace('s2-', '');
+  if (!(uploadedFiles[_fileKey] || []).length)
+    return showMsg(msg, 'Vui lòng tải lên ít nhất một file hồ sơ đính kèm.');
 
   clearMsg('msg2');
   buildConfirm();
@@ -1423,6 +1429,7 @@ function addFilesTo(key, fileList) {
     uploadedFiles[key].push(f);
   }
   renderChips(key);
+  updateStep2Btn();
 }
 
 function renderChips(key) {
@@ -1441,6 +1448,7 @@ function renderChips(key) {
 function removeFile(key, idx) {
   uploadedFiles[key].splice(idx, 1);
   renderChips(key);
+  updateStep2Btn();
 }
 
 // ─── Submit ───────────────────────────────────────────────────────────────────
@@ -1683,6 +1691,68 @@ async function doExport() {
     btn.disabled = false; btn.textContent = 'Tạo file tổng hợp';
   }
 }
+
+// ─── Real-time button state ──────────────────────────────────────────────────
+function updateStep1Btn() {
+  const ten   = document.getElementById('ten_cbcnv').value.trim();
+  const ma    = document.getElementById('ma_nv').value.trim();
+  const chuc  = document.getElementById('chuc_danh').value.trim();
+  const donVi = getDonViValue();
+  const ok = !!(ten && chuc && /^\d{6}$/.test(ma) && donVi);
+  document.getElementById('btn-step1-next').disabled = !ok;
+}
+
+function updateStep2Btn() {
+  const fileKey  = (S2_MAP[currentType] || '').replace('s2-', '');
+  const hasFiles = (uploadedFiles[fileKey] || []).length > 0;
+  let ok = hasFiles;
+
+  if (currentType === 'tham-hoi-om-thannhan') {
+    ok = ok
+      && !!document.getElementById('qh_than_nhan_om').value
+      && !!document.getElementById('ten_nguoi_than').value.trim()
+      && !!document.getElementById('ngay_om_thannhan').value;
+  } else if (currentType === 'tham-hoi-om-cbnv') {
+    ok = ok && !!document.getElementById('ngay_om_cbnv').value;
+  } else if (currentType === 'sinh-con') {
+    ok = ok && !!document.getElementById('so_giay_sinh_con').value.trim();
+  } else if (currentType === 'tham-vieng-cbnv') {
+    ok = ok && !!document.getElementById('ngay_tv_cbnv').value;
+  } else if (currentType === 'tham-vieng-thannhan') {
+    ok = ok
+      && !!document.getElementById('qh_than_nhan_tv').value
+      && !!document.getElementById('ten_than_nhan').value.trim()
+      && !!document.getElementById('ngay_tv_thannhan').value;
+  }
+  // ket-hon: chỉ cần file
+
+  document.getElementById('btn-step2-next').disabled = !ok;
+}
+
+// Wire event listeners (gọi sau khi DOM ready)
+document.addEventListener('DOMContentLoaded', () => {
+  // Step 1 listeners
+  ['ten_cbcnv','ma_nv','chuc_danh'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateStep1Btn)
+  );
+  document.getElementById('don_vi').addEventListener('change', updateStep1Btn);
+  document.getElementById('don_vi_khac').addEventListener('input', updateStep1Btn);
+
+  // Step 2 listeners — tất cả fields có thể trigger
+  const s2Fields = [
+    'qh_than_nhan_om','ten_nguoi_than','ngay_om_thannhan',
+    'ngay_om_cbnv',
+    'so_giay_sinh_con',
+    'ngay_tv_cbnv',
+    'qh_than_nhan_tv','ten_than_nhan','ngay_tv_thannhan',
+  ];
+  s2Fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input',  updateStep2Btn);
+    el.addEventListener('change', updateStep2Btn);
+  });
+});
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
 function showMsg(el, text) {

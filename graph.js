@@ -78,7 +78,7 @@ async function uploadBuffer({ folderPath, filename, buffer, contentType = 'appli
 // khi SharePoint tạo folder → lỗi 423 resourceLocked.
 // Trả về { webUrl, driveId, docxItemId }
 // ──────────────────────────────────────────────
-export async function luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffer }) {
+export async function luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffer, imagesPdfName = 'chung-tu.pdf' }) {
   // 1) Upload DOCX — tạo folder luôn nếu chưa tồn tại
   const docxResult = await uploadBuffer({
     folderPath:  folderName,
@@ -91,7 +91,7 @@ export async function luuHoSo({ folderName, docxBuffer, docxName, imagesPdfBuffe
   if (imagesPdfBuffer) {
     await uploadBuffer({
       folderPath:  folderName,
-      filename:    'chung-tu.pdf',
+      filename:    imagesPdfName,
       buffer:      imagesPdfBuffer,
       contentType: 'application/pdf',
     });

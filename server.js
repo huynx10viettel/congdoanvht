@@ -118,11 +118,13 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
     }
 
     // 1) Upload docx (+ ảnh PDF) lên SharePoint
+    const imagesPdfName = `Ho-so-kem-theo_${ten_cbcnv}_${ngay}-${thang}-${nam}.pdf`;
     const { webUrl, driveId, docxItemId } = await luuHoSo({
       folderName,
       docxBuffer,
       docxName,
       imagesPdfBuffer,
+      imagesPdfName,
     });
 
     // Upload meta.json (fire-and-forget, không chặn luồng chính)
@@ -264,9 +266,9 @@ app.get('/api/admin/export', async (req, res) => {
       try {
         const files = await listFilesInFolder(s._folderPath);
         for (const fname of files) {
-          // Chỉ copy file PDF "Giấy đề nghị" (bỏ qua chung-tu.pdf và meta.json)
+          // Chỉ copy file PDF đề nghị (bỏ qua chung-tu.pdf = file ảnh đính kèm)
           if (!fname.toLowerCase().endsWith('.pdf')) continue;
-          if (!fname.toLowerCase().startsWith('giay-de-nghi')) continue;
+          if (fname.toLowerCase() === 'chung-tu.pdf') continue;
           const buf = await downloadFile(`${s._folderPath}/${fname}`);
           if (!buf) continue;
           await uploadToFolder({
