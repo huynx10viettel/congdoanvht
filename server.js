@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { fillDocx } from './docxFiller.js';
 import { imagesToPdf } from './imagesToPdf.js';
-import { luuHoSo, convertDocxToPdf, uploadPdf, uploadJson, uploadExcel, timHoSo, listSubmissionsByMonth, listSubmissionsByDateRange } from './graph.js';
+import { luuHoSo, convertDocxToPdf, uploadPdf, uploadJson, uploadExcel, uploadToFolder, downloadFile, listFilesInFolder, timHoSo, listSubmissionsByMonth, listSubmissionsByDateRange } from './graph.js';
 import { generateExcel, generateExcelFromTemplate } from './exportExcel.js';
 import { addCommentsToPdf } from './pdfAnnotator.js';
 
@@ -144,22 +144,16 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
       },
     }).catch(e => console.error('meta.json upload failed (non-fatal):', e.message));
 
-    // 2) Graph API convert docx → PDF
-    let pdfWebUrl = null;
-    try {
-      const rawPdf       = await convertDocxToPdf(driveId, docxItemId);
-      // 3) Add 3 FreeText comment annotations
-      const annotatedPdf = await addCommentsToPdf(rawPdf);
-      // 4) Upload PDF đã annotate vào cùng folder
-      const pdfName      = `De-nghi-phuc-loi_${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}.pdf`;
-      const pdfResult    = await uploadPdf({ folderName, pdfBuffer: annotatedPdf, pdfName });
-      pdfWebUrl = pdfResult.webUrl;
-    } catch (pdfErr) {
-      // Không chặn luồng chính — docx vẫn đã được lưu thành công
-      console.error('PDF convert/annotate error (non-fatal):', pdfErr.message);
-    }
+    // 2) Trả response ngay — client không cần chờ PDF
+    res.json({ success: true, webUrl });
 
-    res.json({ success: true, webUrl, pdfWebUrl });
+    // 3) Convert docx → PDF + annotate + upload (fire-and-forget, chạy ngầm)
+    const pdfName = `De-nghi-phuc-loi_${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}.pdf`;
+    convertDocxToPdf(driveId, docxItemId)
+      .then(rawPdf  => addCommentsToPdf(rawPdf))
+      .then(annPdf  => uploadPdf({ folderName, pdfBuffer: annPdf, pdfName }))
+      .then(r       => console.log('[pdf] uploaded:', r.webUrl))
+      .catch(e      => console.error('[pdf] error (non-fatal):', e.message));
   } catch (err) {
     console.error('Submit error:', err);
     res.status(500).json({ error: err.message || 'Có lỗi xảy ra. Vui lòng thử lại.' });
@@ -230,17 +224,68 @@ app.get('/api/admin/export', async (req, res) => {
       submissions, parseInt(mm), parseInt(yyyy), templatePath
     );
 
-    // Thêm timestamp vào tên file để phân biệt các lần xuất
+    // Tên file + export folder (subfolder riêng chứa tất cả file)
     const now = new Date();
     const ts  = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${now.getFullYear()}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-    const filename    = `Tong-hop-phuc-loi-T${mm}-${yyyy}_${ts}.xlsx`;
-    const monthFolder = `Thang-${mm}-${yyyy}`;
+    const baseName     = `Tong-hop-phuc-loi-T${mm}-${yyyy}_${ts}`;
+    const filename     = `${baseName}.xlsx`;
+    const monthFolder  = `Thang-${mm}-${yyyy}`;
+    const exportFolder = `${monthFolder}/Export_${startDate}_${endDate}_${ts}`;
 
-    const { webUrl }   = await uploadExcel({ monthFolder, filename, buffer: excelBuffer });
-    // folderWebUrl = bỏ phần /TenFile ở cuối webUrl
-    const folderWebUrl = webUrl.substring(0, webUrl.lastIndexOf('/'));
+    // 1. Upload Excel vào export folder (cần driveId + itemId để convert)
+    const excelResult = await uploadToFolder({
+      folderPath:  exportFolder,
+      filename,
+      buffer:      excelBuffer,
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+    const { webUrl } = excelResult;
 
-    res.json({ success: true, webUrl, folderWebUrl, filename, count: submissions.length });
+    // 2. Convert Excel → PDF (Graph API hỗ trợ xlsx → pdf)
+    let pdfUploaded = false;
+    try {
+      const pdfBuffer     = await convertDocxToPdf(excelResult.driveId, excelResult.itemId);
+      const annotatedPdf  = await addCommentsToPdf(pdfBuffer);
+      await uploadToFolder({
+        folderPath:  exportFolder,
+        filename:    `${baseName}.pdf`,
+        buffer:      annotatedPdf,
+        contentType: 'application/pdf',
+      });
+      pdfUploaded = true;
+    } catch (pdfErr) {
+      console.warn('[export] Excel→PDF failed (non-fatal):', pdfErr.message);
+    }
+
+    // 3. Copy file PDF hồ sơ từng submission vào export folder
+    let copied = 0;
+    for (const s of submissions) {
+      if (!s._folderPath) continue;
+      try {
+        const files = await listFilesInFolder(s._folderPath);
+        for (const fname of files) {
+          if (!fname.toLowerCase().endsWith('.pdf')) continue;
+          const buf = await downloadFile(`${s._folderPath}/${fname}`);
+          if (!buf) continue;
+          // Đặt tên: HoSo_TenNV_MaNV_TenFile.pdf
+          const safe    = (s.ten_cbcnv || 'unknown').replace(/[/\\:*?"<>|]/g, '_');
+          const newName = `HoSo_${safe}_${s.ma_nv || ''}_${fname}`;
+          await uploadToFolder({
+            folderPath:  exportFolder,
+            filename:    newName,
+            buffer:      buf,
+            contentType: 'application/pdf',
+          });
+          copied++;
+        }
+      } catch (copyErr) {
+        console.warn(`[export] copy ${s._folderPath} failed:`, copyErr.message);
+      }
+    }
+
+    console.log(`[export] ${submissions.length} submissions, ${copied} PDFs copied, pdfUploaded=${pdfUploaded}`);
+
+    res.json({ success: true, webUrl, folderWebUrl: 'https://w0tks.sharepoint.com/sites/PLCDVHT', filename, count: submissions.length });
   } catch (err) {
     console.error('Admin export error:', err);
     res.status(500).json({ error: err.message || 'Có lỗi khi kết xuất. Vui lòng thử lại.' });

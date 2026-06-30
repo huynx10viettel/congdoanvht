@@ -250,7 +250,7 @@ export async function uploadExcel({ monthFolder, filename, buffer }) {
     buffer,
     contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  return { webUrl: result.webUrl };
+  return { webUrl: result.webUrl, driveId: result.driveId, itemId: result.itemId };
 }
 
 // ──────────────────────────────────────────────
@@ -302,8 +302,9 @@ export async function listSubmissionsByMonth(thang, nam) {
   // Đọc meta.json từng folder song song
   const submissions = await Promise.all(
     matching.map(async folder => {
-      const meta = await readMetaFromFolder(`${monthFolder}/${folder.name}`);
-      if (meta) return meta;
+      const folderPath = `${monthFolder}/${folder.name}`;
+      const meta = await readMetaFromFolder(folderPath);
+      if (meta) return { ...meta, _folderPath: folderPath };
       // Fallback: tái tạo từ tên folder
       const parts = folder.name.split('_');
       return {
@@ -316,9 +317,46 @@ export async function listSubmissionsByMonth(thang, nam) {
         qh_than_nhan:  '',
         ten_nguoi_than:'',
         benh_vien:     '',
+        _folderPath:   folderPath,
       };
     })
   );
 
   return submissions.sort((a, b) => (a.ten_cbcnv || '').localeCompare(b.ten_cbcnv || '', 'vi'));
+}
+
+// ──────────────────────────────────────────────
+// downloadFile — Tải nội dung file từ SharePoint
+// Trả về Buffer hoặc null nếu không tìm thấy
+// ──────────────────────────────────────────────
+export async function downloadFile(filePath) {
+  const token = await getToken();
+  const url   = `${DRIVE_BASE}/root:/${filePath}:/content`;
+  const res   = await fetch(url, {
+    headers:  { Authorization: `Bearer ${token}` },
+    redirect: 'follow',
+  });
+  if (!res.ok) return null;
+  return Buffer.from(await res.arrayBuffer());
+}
+
+// ──────────────────────────────────────────────
+// listFilesInFolder — Liệt kê tên file trong folder
+// Trả về mảng tên file (không gồm subfolder)
+// ──────────────────────────────────────────────
+export async function listFilesInFolder(folderPath) {
+  const token = await getToken();
+  const url   = `${DRIVE_BASE}/root:/${folderPath}:/children?$select=name,file&$top=50`;
+  const res   = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+  if (!res.ok) return [];
+  const data  = await res.json();
+  return (data.value || []).filter(item => item.file).map(item => item.name);
+}
+
+// ──────────────────────────────────────────────
+// uploadToFolder — Upload file vào bất kỳ folder nào
+// Trả về { webUrl, driveId, itemId }
+// ──────────────────────────────────────────────
+export async function uploadToFolder({ folderPath, filename, buffer, contentType = 'application/octet-stream' }) {
+  return uploadBuffer({ folderPath, filename, buffer, contentType });
 }
