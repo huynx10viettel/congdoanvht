@@ -295,7 +295,10 @@ export async function listSubmissionsByMonth(thang, nam) {
   }
 
   const body     = await res.json();
-  const matching = (body.value || []).filter(item => item.folder);
+  // Loại trừ folder export (Tong-hop-...) — chỉ lấy folder hồ sơ cá nhân
+  const matching = (body.value || []).filter(item =>
+    item.folder && !item.name.toLowerCase().startsWith('tong-hop')
+  );
 
   if (matching.length === 0) return [];
 

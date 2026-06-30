@@ -266,9 +266,12 @@ app.get('/api/admin/export', async (req, res) => {
       try {
         const files = await listFilesInFolder(s._folderPath);
         for (const fname of files) {
-          // Chỉ copy file PDF đề nghị (bỏ qua chung-tu.pdf = file ảnh đính kèm)
-          if (!fname.toLowerCase().endsWith('.pdf')) continue;
-          if (fname.toLowerCase() === 'chung-tu.pdf') continue;
+          // Whitelist: chỉ copy file đề nghị + hồ sơ đính kèm
+          const lname = fname.toLowerCase();
+          if (!lname.endsWith('.pdf')) continue;
+          if (!lname.startsWith('giay-de-nghi') &&      // tên mới
+              !lname.startsWith('de-nghi-phuc-loi') &&  // tên cũ
+              !lname.startsWith('ho-so-kem-theo')) continue;
           const buf = await downloadFile(`${s._folderPath}/${fname}`);
           if (!buf) continue;
           await uploadToFolder({
