@@ -109,7 +109,7 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
     const docxBuffer = fillDocx(templatePath, data);
     const subFolder  = `${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}`;
     const folderName = `${monthFolder}/${subFolder}`;   // Thang-MM-YYYY/TenNV_MaNV_dd-mm-yyyy
-    const docxName   = `De-nghi-phuc-loi_${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}.docx`;
+    const docxName   = `Giay-de-nghi-chi-quy-phuc-loi-va-quy-cong-doan_${ten_cbcnv}_${ngay}-${thang}-${nam}.docx`;
 
     // Ảnh / PDF đính kèm → merge PDF
     let imagesPdfBuffer = null;
@@ -148,7 +148,7 @@ app.post('/api/submit', upload.array('images'), async (req, res) => {
     res.json({ success: true, webUrl });
 
     // 3) Convert docx → PDF + annotate + upload (fire-and-forget, chạy ngầm)
-    const pdfName = `De-nghi-phuc-loi_${ten_cbcnv}_${ma_nv}_${ngay}-${thang}-${nam}.pdf`;
+    const pdfName = `Giay-de-nghi-chi-quy-phuc-loi-va-quy-cong-doan_${ten_cbcnv}_${ngay}-${thang}-${nam}.pdf`;
     convertDocxToPdf(driveId, docxItemId)
       .then(rawPdf  => addCommentsToPdf(rawPdf))
       .then(annPdf  => uploadPdf({ folderName, pdfBuffer: annPdf, pdfName }))
@@ -227,10 +227,10 @@ app.get('/api/admin/export', async (req, res) => {
     // Tên file + export folder (subfolder riêng chứa tất cả file)
     const now = new Date();
     const ts  = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${now.getFullYear()}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
-    const baseName     = `Tong-hop-phuc-loi-T${mm}-${yyyy}_${ts}`;
+    const baseName     = `Danh-sach-chi-tien-cong-doan-phuc-loi-thang-${mm}-nam-${yyyy}_${ts}`;
     const filename     = `${baseName}.xlsx`;
     const monthFolder  = `Thang-${mm}-${yyyy}`;
-    const exportFolder = `${monthFolder}/Export_${startDate}_${endDate}_${ts}`;
+    const exportFolder = `${monthFolder}/Tong-hop-thang-${mm}-${yyyy}_${ts}`;
 
     // 1. Upload Excel vào export folder (cần driveId + itemId để convert)
     const excelResult = await uploadToFolder({
@@ -264,15 +264,14 @@ app.get('/api/admin/export', async (req, res) => {
       try {
         const files = await listFilesInFolder(s._folderPath);
         for (const fname of files) {
+          // Chỉ copy file PDF "Giấy đề nghị" (bỏ qua chung-tu.pdf và meta.json)
           if (!fname.toLowerCase().endsWith('.pdf')) continue;
+          if (!fname.toLowerCase().startsWith('giay-de-nghi')) continue;
           const buf = await downloadFile(`${s._folderPath}/${fname}`);
           if (!buf) continue;
-          // Đặt tên: HoSo_TenNV_MaNV_TenFile.pdf
-          const safe    = (s.ten_cbcnv || 'unknown').replace(/[/\\:*?"<>|]/g, '_');
-          const newName = `HoSo_${safe}_${s.ma_nv || ''}_${fname}`;
           await uploadToFolder({
             folderPath:  exportFolder,
-            filename:    newName,
+            filename:    fname,   // giữ nguyên tên gốc (đã chứa tên NV + ngày)
             buffer:      buf,
             contentType: 'application/pdf',
           });
