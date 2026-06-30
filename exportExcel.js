@@ -73,44 +73,53 @@ function buildNoiDung(s) {
 // ── HỒ SƠ KÈM THEO ──────────────────────────────────────────────────────────
 // Label mapping cho loại giấy tờ
 const GIAY_TO_LABEL = {
-  'giay-ra-vien':           'Giấy ra viện',
-  'giay-xac-nhan-nam-vien': 'Giấy xác nhận nằm viện',
-  'giay-khai-sinh':         'Giấy khai sinh',
-  'giay-chung-sinh':        'Giấy chứng sinh',
-  'thiep-cuoi':             'Thiệp cưới',
-  'giay-dang-ky-ket-hon':   'Giấy đăng ký kết hôn',
-  'cao-pho':                'Cáo phó',
+  'giay-ra-vien':                  'Giấy ra viện',
+  'giay-xac-nhan-nam-vien':        'Giấy xác nhận nằm viện',
+  'giay-chung-nhan-phau-thuat':    'Giấy chứng nhận phẫu thuật',
+  'giay-khai-sinh':                'Giấy khai sinh',
+  'giay-chung-sinh':               'Giấy chứng sinh',
+  'thiep-cuoi':                    'Thiệp cưới',
+  'giay-dang-ky-ket-hon':          'Giấy đăng ký kết hôn',
+  'cao-pho':                       'Cáo phó',
 };
+
+// Chuyển YYYY-MM-DD (HTML date input) → D/M/YYYY (không zero-pad)
+function formatNgayGT(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(d)}/${parseInt(m)}/${y}`;
+}
 
 function buildHoSo(s) {
   // Nếu đã có giá trị rõ ràng từ meta cũ
   if (s.ho_so_kem_theo) return s.ho_so_kem_theo;
 
-  const loai = s.loai_giay_to || '';
-  const so   = s.so_giay_to   || '';
-  const ngay = s.ngay_giay_to || '';
+  const loai  = s.loai_giay_to || '';
+  const so    = s.so_giay_to   || '';
+  const ngay  = s.ngay_giay_to || '';
+  const ngayF = formatNgayGT(ngay); // D/M/YYYY, rỗng nếu không có
 
   switch (s.loai_phuc_loi) {
     case 'tham-hoi-om-cbnv':
     case 'tham-hoi-om-thannhan': {
       const label = GIAY_TO_LABEL[loai] || 'Giấy ra viện';
-      return ngay ? `${label} ngày ${ngay}` : label;
+      return ngayF ? `${label} ngày ${ngayF}` : label;
     }
     case 'sinh-con': {
-      const label  = GIAY_TO_LABEL[loai] || 'Giấy khai sinh';
-      const soStr  = so   ? ` số ${so}`    : '';
-      const ngayStr = ngay ? ` ngày ${ngay}` : '';
+      const label   = GIAY_TO_LABEL[loai] || 'Giấy khai sinh';
+      const soStr   = so    ? ` số ${so}`       : '';
+      const ngayStr = ngayF ? ` ngày ${ngayF}`  : '';
       return `${label}${soStr}${ngayStr}`;
     }
     case 'ket-hon': {
       if (loai === 'giay-dang-ky-ket-hon') {
         return so ? `Giấy đăng ký kết hôn số ${so}` : 'Giấy đăng ký kết hôn';
       }
-      return ngay ? `Thiệp cưới ngày ${ngay}` : 'Thiệp cưới';
+      return ngayF ? `Thiệp cưới ngày ${ngayF}` : 'Thiệp cưới';
     }
     case 'tham-vieng-cbnv':
     case 'tham-vieng-thannhan':
-      return ngay ? `Cáo phó ngày ${ngay}` : 'Cáo phó';
+      return ngayF ? `Cáo phó ngày ${ngayF}` : 'Cáo phó';
     default:
       return '';
   }

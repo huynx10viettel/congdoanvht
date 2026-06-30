@@ -731,6 +731,7 @@
                       <select class="field-select" id="loai_giay_to_om_thannhan">
                         <option value="giay-ra-vien" selected>Giấy ra viện</option>
                         <option value="giay-xac-nhan-nam-vien">Giấy xác nhận nằm viện</option>
+                        <option value="giay-chung-nhan-phau-thuat">Giấy chứng nhận phẫu thuật</option>
                       </select>
                     </div>
                   </div>
@@ -769,6 +770,7 @@
                       <select class="field-select" id="loai_giay_to_om_cbnv">
                         <option value="giay-ra-vien" selected>Giấy ra viện</option>
                         <option value="giay-xac-nhan-nam-vien">Giấy xác nhận nằm viện</option>
+                        <option value="giay-chung-nhan-phau-thuat">Giấy chứng nhận phẫu thuật</option>
                       </select>
                     </div>
                   </div>
@@ -800,14 +802,14 @@
                       </select>
                     </div>
                   </div>
+                  <div class="field-group" id="row-so-giay-ket-hon" style="display:none">
+                    <label class="field-label">Số giấy đăng ký kết hôn</label>
+                    <input class="field-input" id="so_giay_ket_hon_new" placeholder="Nhập số giấy đăng ký kết hôn" />
+                  </div>
                   <div class="field-group" id="row-ngay-cuoi">
-                    <label class="field-label">Ngày cưới</label>
+                    <label class="field-label">Ngày</label>
                     <input class="field-input" id="ngay_cuoi" type="date" />
                   </div>
-                </div>
-                <div class="field-group" id="row-so-giay-ket-hon" style="display:none">
-                  <label class="field-label">Số giấy đăng ký kết hôn</label>
-                  <input class="field-input" id="so_giay_ket_hon_new" placeholder="Nhập số giấy đăng ký kết hôn" style="max-width:300px" />
                 </div>
                 <div class="field-group">
                   <label class="field-label">Hồ sơ đính kèm <span class="req">*</span></label>
@@ -847,7 +849,7 @@
                     </div>
                   </div>
                   <div class="field-group">
-                    <label class="field-label">Số giấy tờ</label>
+                    <label class="field-label">Số giấy tờ <span class="req">*</span></label>
                     <input class="field-input" id="so_giay_sinh_con" placeholder="VD: 001/2026" />
                   </div>
                 </div>
@@ -878,7 +880,7 @@
                     </div>
                   </div>
                   <div class="field-group">
-                    <label class="field-label">Ngày</label>
+                    <label class="field-label">Ngày <span class="req">*</span></label>
                     <input class="field-input" id="ngay_tv_cbnv" type="date" style="max-width:200px" />
                   </div>
                 </div>
@@ -926,7 +928,7 @@
                     </div>
                   </div>
                   <div class="field-group">
-                    <label class="field-label">Ngày</label>
+                    <label class="field-label">Ngày <span class="req">*</span></label>
                     <input class="field-input" id="ngay_tv_thannhan" type="date" style="max-width:200px" />
                   </div>
                 </div>
@@ -1322,13 +1324,21 @@ function goToStep3Form() {
     if (!document.getElementById('ten_nguoi_than').value.trim())
       return showMsg(msg, 'Vui lòng nhập họ tên thân nhân.');
   }
-  if (currentType === 'tham-hoi-om-cbnv') {
+  if (currentType === 'sinh-con') {
+    if (!document.getElementById('so_giay_sinh_con').value.trim())
+      return showMsg(msg, 'Vui lòng nhập số giấy tờ.');
+  }
+  if (currentType === 'tham-vieng-cbnv') {
+    if (!document.getElementById('ngay_tv_cbnv').value)
+      return showMsg(msg, 'Vui lòng nhập ngày.');
   }
   if (currentType === 'tham-vieng-thannhan') {
     if (!document.getElementById('qh_than_nhan_tv').value)
       return showMsg(msg, 'Vui lòng chọn thân nhân.');
     if (!document.getElementById('ten_than_nhan').value.trim())
       return showMsg(msg, 'Vui lòng nhập họ tên thân nhân.');
+    if (!document.getElementById('ngay_tv_thannhan').value)
+      return showMsg(msg, 'Vui lòng nhập ngày.');
   }
 
   clearMsg('msg2');
@@ -1371,8 +1381,13 @@ function buildConfirm() {
     const d = document.getElementById('ngay_om_cbnv').value;
     html += row('Ngày', d ? formatDate(d) : '');
   } else if (currentType === 'ket-hon') {
-    const d = document.getElementById('ngay_cuoi').value;
-    html += row('Ngày cưới', d ? formatDate(d) : '');
+    const loaiKH = document.getElementById('loai_giay_to_ket_hon').value;
+    if (loaiKH === 'giay-dang-ky-ket-hon') {
+      html += row('Số giấy đăng ký kết hôn', document.getElementById('so_giay_ket_hon_new').value.trim());
+    } else {
+      const d = document.getElementById('ngay_cuoi').value;
+      html += row('Ngày', d ? formatDate(d) : '');
+    }
   } else if (currentType === 'sinh-con') {
     html += row('Tên con', document.getElementById('ten_con').value.trim());
     const d = document.getElementById('ngay_sinh_con').value;
