@@ -190,6 +190,20 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   const ws = wb.getWorksheet('CD - PL in cho ký nhận');
   if (!ws) throw new Error('Không tìm thấy sheet "CD - PL in cho ký nhận" trong template');
 
+  // ── Page setup: A4 ngang, fit vừa chiều ngang 1 trang ───────────────────────
+  ws.pageSetup = {
+    paperSize:    9,            // A4
+    orientation:  'landscape',
+    fitToPage:    true,
+    fitToWidth:   1,            // fit vừa chiều ngang
+    fitToHeight:  0,            // chiều dọc tự động (bao nhiêu trang cũng được)
+    margins: {
+      left: 0.5, right: 0.5,
+      top:  0.75, bottom: 0.75,
+      header: 0.3, footer: 0.3,
+    },
+  };
+
   const yyyy = String(nam);
 
   // ── 1. Ghi đè tiêu đề ────────────────────────────────────────────────────────
