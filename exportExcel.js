@@ -146,10 +146,33 @@ const BORDER_THIN = {
   right:  { style: 'thin' },
 };
 
+// ── Tất cả merge ranges trong template (từ openpyxl analysis) ────────────────
+// ExcelJS spliceRows() xóa TOÀN BỘ ws._merges kể cả header rows → phải hardcode
+// Rows < 8: header, không dịch. Rows >= 8: dịch theo SHIFT = n - 7.
+const TEMPLATE_MERGES = [
+  // Header rows (row < DATA_START=8) — giữ nguyên vị trí
+  { c1:'A', r1:1,  c2:'E', r2:1  },
+  { c1:'F', r1:1,  c2:'M', r2:1  },
+  { c1:'A', r1:2,  c2:'E', r2:2  },
+  { c1:'F', r1:2,  c2:'M', r2:2  },
+  { c1:'A', r1:3,  c2:'E', r2:3  },
+  { c1:'F', r1:3,  c2:'M', r2:3  },
+  { c1:'A', r1:4,  c2:'M', r2:4  },
+  { c1:'A', r1:5,  c2:'M', r2:5  },
+  // Data-area rows (row >= DATA_START=8) — dịch theo SHIFT
+  { c1:'A', r1:15, c2:'E', r2:15 },  // TỔNG CỘNG label
+  { c1:'A', r1:16, c2:'E', r2:16 },  // BẰNG CHỮ label
+  { c1:'F', r1:16, c2:'L', r2:16 },  // BẰNG CHỮ value
+  { c1:'F', r1:17, c2:'I', r2:17 },  // spacer row
+  { c1:'B', r1:18, c2:'D', r2:18 },  // Chữ ký 1
+  { c1:'E', r1:18, c2:'I', r2:18 },  // Chữ ký 2
+  { c1:'J', r1:18, c2:'M', r2:18 },  // Chữ ký 3
+];
+
 // ── generateExcelFromTemplate ────────────────────────────────────────────────
 // Clone template_export.xlsx, điền data submissions vào sheet
 // "CD - PL in cho ký nhận" bằng giá trị tĩnh (không dùng formula).
-// Template có 4 data rows (8–11) → splice ra, splice n rows mới vào.
+// Template có 7 data rows (8–14) → splice ra, splice n rows mới vào.
 // ─────────────────────────────────────────────────────────────────────────────
 export async function generateExcelFromTemplate(submissions, thang, nam, templatePath) {
   const wb = new ExcelJS.Workbook();
@@ -159,10 +182,6 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   if (!ws) throw new Error('Không tìm thấy sheet "CD - PL in cho ký nhận" trong template');
 
   const yyyy = String(nam);
-
-  // ── 0. Lưu lại merge ranges trước khi splice (spliceRows không tự update merges) ──
-  // Template merges: A15:E15, A16:E16, F16:L16, B18:D18, E18:I18, J18:M18, F17:I17, ...
-  const savedMerges = Object.keys(ws._merges || {});
 
   // ── 1. Ghi đè tiêu đề ────────────────────────────────────────────────────────
   ws.getCell('A4').value = `DANH SÁCH CHI TIỀN CÔNG ĐOÀN PHÚC LỢI THÁNG ${parseInt(thang)} ${yyyy}`;
@@ -248,26 +267,29 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   const rowsToDelete = ws.rowCount - formulaStart + 1;
   if (rowsToDelete > 0) ws.spliceRows(formulaStart, rowsToDelete);
 
-  // ── 8. Restore merged cells (spliceRows phá vỡ merges) ───────────────────────
-  // Xóa tất cả merge hiện tại (có thể bị shift sai)
-  Object.keys(ws._merges || {}).forEach(r => { try { ws.unMergeCells(r); } catch {} });
-
-  // Re-apply merges với vị trí đã điều chỉnh
-  // Rows >= DATA_START(8) bị dịch: new_row = old_row - TEMPLATE_DATA_COUNT + n
+  // ── 8. Restore merged cells ────────────────────────────────────────────────
+  // ExcelJS spliceRows() xóa toàn bộ ws._merges (kể cả header rows).
+  // Dùng danh sách TEMPLATE_MERGES đã hardcode để re-apply với vị trí đúng.
   const SHIFT = n - TEMPLATE_DATA_COUNT; // = n - 7
-  savedMerges.forEach(mergeStr => {
-    const m = mergeStr.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
-    if (!m) return;
-    const [, c1, r1str, c2, r2str] = m;
-    let row1 = parseInt(r1str), row2 = parseInt(r2str);
+
+  // Xóa bất kỳ stale merge nào còn sót
+  try {
+    Object.keys(ws._merges || {}).forEach(k => { try { ws.unMergeCells(k); } catch {} });
+  } catch {}
+
+  TEMPLATE_MERGES.forEach(({ c1, r1, c2, r2 }) => {
+    let row1 = r1, row2 = r2;
+    // Dịch row với những merge ở vùng dữ liệu (>= DATA_START)
     if (row1 >= DATA_START) {
       row1 += SHIFT;
       row2 += SHIFT;
     }
-    // Bỏ qua merges trong vùng formula helper (đã xóa)
-    if (row1 >= formulaStart + SHIFT) return;
+    // Bỏ qua nếu nằm trong vùng formula helper đã xóa (>= formulaStart)
+    if (row1 >= formulaStart) return;
     if (row1 < 1 || row2 < 1) return;
-    try { ws.mergeCells(`${c1}${row1}:${c2}${row2}`); } catch {}
+    try { ws.mergeCells(`${c1}${row1}:${c2}${row2}`); } catch (e) {
+      console.warn(`[merge] ${c1}${row1}:${c2}${row2} —`, e.message);
+    }
   });
 
   return Buffer.from(await wb.xlsx.writeBuffer());
