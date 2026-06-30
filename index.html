@@ -547,9 +547,7 @@
       </div>
 
       <div class="w-footer">
-        <button class="btn-admin-link" onclick="goToLookup()">Tra cứu hồ sơ</button>
-        <span style="color:var(--text-placeholder);font-size:12px;margin:0 6px">·</span>
-        <button class="btn-admin-link" onclick="goToAdmin()">Cán bộ công đoàn</button>
+        <button class="btn-admin-link" onclick="goToAdmin()">Admin</button>
       </div>
     </div>
   </div>
@@ -1109,7 +1107,7 @@
           <img src="logo-vht.svg" alt="Viettel High Tech" style="height:32px;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
           <div class="card-logo-fallback" style="display:none"><span class="lf-name">viettel</span><span class="lf-sub">high tech</span></div>
         </div>
-        <h2 class="card-title">Cán bộ công đoàn</h2>
+        <h2 class="card-title">Admin</h2>
 
         <div id="admin-step-code">
           <p class="card-subtitle">Nhập mã xác thực để truy cập chức năng kết xuất báo cáo.</p>
@@ -1142,7 +1140,7 @@
           <div id="msg-admin-export" class="msg"></div>
           <div class="card-btn-row" style="margin-top:16px">
             <button class="card-btn-secondary" onclick="showScreen('screen-welcome')">← Trang chủ</button>
-            <button class="card-btn-primary" id="btn-export" onclick="doExport()">📊 Tạo file tổng hợp</button>
+            <button class="card-btn-primary" id="btn-export" onclick="doExport()">Tạo file tổng hợp</button>
           </div>
         </div>
       </div>
@@ -1620,7 +1618,8 @@ async function doExport() {
   if (!endDate)   return showMsg(msg, 'Vui lòng chọn ngày kết thúc.');
   if (startDate > endDate) return showMsg(msg, 'Ngày bắt đầu phải ≤ ngày kết thúc.');
   const btn = document.getElementById('btn-export');
-  btn.disabled = true; btn.textContent = 'Đang tạo file...';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loading-ring" style="width:18px;height:18px;border-width:2.5px;display:inline-block;vertical-align:middle;margin-right:6px"></span>Đang tạo file...';
   try {
     const res = await fetch(`/api/admin/export?startDate=${startDate}&endDate=${endDate}`, {
       headers: { 'X-Admin-Code': _adminCode },
@@ -1643,13 +1642,11 @@ async function doExport() {
       + (data.webUrl
           ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📊 Mở file Excel</a>`
           : '')
-      + (data.folderWebUrl
-          ? ` &nbsp;<a href="${data.folderWebUrl}" target="_blank" rel="noopener" style="color:#555;font-size:13px">📂 Thư mục</a>`
-          : '');
+      + ` &nbsp;<a href="https://w0tks.sharepoint.com/sites/PLCDVHT" target="_blank" rel="noopener" style="color:#555;font-size:13px">📂 Thư mục</a>`;
   } catch (err) {
     showMsg(msg, '❌ Lỗi: ' + err.message);
   } finally {
-    btn.disabled = false; btn.textContent = '📊 Tạo file tổng hợp';
+    btn.disabled = false; btn.textContent = 'Tạo file tổng hợp';
   }
 }
 

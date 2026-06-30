@@ -234,7 +234,7 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
     tongPL += amounts.pl;
 
     const row = ws.getRow(DATA_START + i);
-    row.height = 22;
+    // Không set height → Excel tự fit content khi mở file
     for (let c = 1; c <= 13; c++) {
       row.getCell(c).border    = BORDER_THIN;
       row.getCell(c).alignment = { vertical: 'middle', wrapText: true };
@@ -427,7 +427,7 @@ export async function generateExcel(submissions, thang, nam) {
       '',                  // KÝ NHẬN
     ]);
 
-    row.height = 22;
+    // Không set height → Excel tự fit content khi mở file
     row.eachCell(c => { c.border = BORDER_THIN; c.alignment = { vertical: 'middle', wrapText: true }; });
 
     // Format số tiền
