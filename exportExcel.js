@@ -265,6 +265,7 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   // ── 5. TỔNG CỘNG (row DATA_START + n) ────────────────────────────────────────
   const totalRowIdx = DATA_START + n;
   const totalRow    = ws.getRow(totalRowIdx);
+  totalRow.height   = 20;
   // Xóa giá trị formula cũ trong merged range A:E (để tránh hiển thị placeholder)
   for (let c = 2; c <= 5; c++) totalRow.getCell(c).value = null;
   totalRow.getCell(6).value = tongCD;
@@ -280,6 +281,7 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
   // Template: C1='BẰNG CHỮ', C6=giá trị (F16:L16 merged)
   const bangChuRowIdx = totalRowIdx + 1;
   const bangChuRow    = ws.getRow(bangChuRowIdx);
+  bangChuRow.height   = 20;
   for (let c = 2; c <= 5; c++) bangChuRow.getCell(c).value = null;  // clear merged cells
   for (let c = 7; c <= 12; c++) bangChuRow.getCell(c).value = null; // clear F16:L16 rest
   bangChuRow.getCell(6).value = soThanhChu(tongCD + tongPL);
