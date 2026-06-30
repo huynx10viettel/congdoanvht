@@ -1323,6 +1323,12 @@ function goToStep3Form() {
       return showMsg(msg, 'Vui lòng chọn thân nhân.');
     if (!document.getElementById('ten_nguoi_than').value.trim())
       return showMsg(msg, 'Vui lòng nhập họ tên thân nhân.');
+    if (!document.getElementById('ngay_om_thannhan').value)
+      return showMsg(msg, 'Vui lòng nhập ngày ra viện / xác nhận.');
+  }
+  if (currentType === 'tham-hoi-om-cbnv') {
+    if (!document.getElementById('ngay_om_cbnv').value)
+      return showMsg(msg, 'Vui lòng nhập ngày ra viện / xác nhận.');
   }
   if (currentType === 'sinh-con') {
     if (!document.getElementById('so_giay_sinh_con').value.trim())
