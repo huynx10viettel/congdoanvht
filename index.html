@@ -1619,9 +1619,12 @@ async function doExport() {
     const [ey, em] = endDate.split('-');
     msg.className = 'msg ok';
     msg.innerHTML = `✅ Đã xuất ${data.count || 0} hồ sơ (${startDate} → ${endDate}) vào SharePoint.`
+      + (data.webUrl
+          ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📊 Mở file Excel</a>`
+          : '')
       + (data.folderWebUrl
-          ? ` <a href="${data.folderWebUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở thư mục T${em}/${ey}</a>`
-          : (data.webUrl ? ` <a href="${data.webUrl}" target="_blank" rel="noopener" style="color:#1a5e96;font-weight:600">📂 Mở file</a>` : ''));
+          ? ` &nbsp;<a href="${data.folderWebUrl}" target="_blank" rel="noopener" style="color:#555;font-size:13px">📂 Thư mục</a>`
+          : '');
   } catch (err) {
     showMsg(msg, '❌ Lỗi: ' + err.message);
   } finally {

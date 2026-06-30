@@ -160,18 +160,20 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
 
   const yyyy = String(nam);
 
-  // 1. Ghi đè tiêu đề (A4 và A5 là merged cell có formula → ghi value tĩnh)
+  // ── 0. Lưu lại merge ranges trước khi splice (spliceRows không tự update merges) ──
+  // Template merges: A15:E15, A16:E16, F16:L16, B18:D18, E18:I18, J18:M18, F17:I17, ...
+  const savedMerges = Object.keys(ws._merges || {});
+
+  // ── 1. Ghi đè tiêu đề ────────────────────────────────────────────────────────
   ws.getCell('A4').value = `DANH SÁCH CHI TIỀN CÔNG ĐOÀN PHÚC LỢI THÁNG ${parseInt(thang)} ${yyyy}`;
   ws.getCell('A5').value = `(Kèm theo phiếu chi số PC_CĐCS số              ngày    /    /${yyyy})`;
 
-  // 2. Xoá 7 data rows của template (rows 8–14)
-  // Template có 7 mẫu: R8 (placeholder), R9-R14 (sample data)
-  const DATA_START           = 8;
-  const TEMPLATE_DATA_COUNT  = 7;
+  // ── 2. Xoá 7 data rows mẫu (R8–R14) ─────────────────────────────────────────
+  const DATA_START          = 8;
+  const TEMPLATE_DATA_COUNT = 7;
   ws.spliceRows(DATA_START, TEMPLATE_DATA_COUNT);
-  // Sau bước này: TỔNG CỘNG ở row 8, BẰNG CHỮ ở row 9
 
-  // 3. Chèn n data rows tại row 8
+  // ── 3. Chèn n data rows thực tế ──────────────────────────────────────────────
   const n = submissions.length;
   if (n > 0) {
     const dataArrays = submissions.map((s, i) => {
@@ -184,18 +186,18 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
         s.don_vi     || '',
         amounts.cd,
         amounts.pl,
-        '',                         // THUẾ TNCN
-        amounts.cd + amounts.pl,    // THỰC NHẬN
+        '',                      // THUẾ TNCN
+        amounts.cd + amounts.pl, // THỰC NHẬN
         buildHoTen(s),
         buildQuanHe(s),
         buildHoSo(s),
-        '',                         // KÝ NHẬN
+        '',                      // KÝ NHẬN
       ];
     });
     ws.spliceRows(DATA_START, 0, ...dataArrays);
   }
 
-  // 4. Áp dụng format cho các data row mới chèn vào
+  // ── 4. Format data rows ───────────────────────────────────────────────────────
   let tongCD = 0, tongPL = 0;
   for (let i = 0; i < n; i++) {
     const s       = submissions[i];
@@ -205,40 +207,68 @@ export async function generateExcelFromTemplate(submissions, thang, nam, templat
 
     const row = ws.getRow(DATA_START + i);
     row.height = 22;
-
     for (let c = 1; c <= 13; c++) {
-      const cell = row.getCell(c);
-      cell.border    = BORDER_THIN;
-      cell.alignment = { vertical: 'middle', wrapText: true };
+      row.getCell(c).border    = BORDER_THIN;
+      row.getCell(c).alignment = { vertical: 'middle', wrapText: true };
     }
-    // Số tiền — căn phải + format
     [6, 7, 9].forEach(col => {
-      const cell = row.getCell(col);
-      cell.numFmt    = '#,##0';
-      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      row.getCell(col).numFmt    = '#,##0';
+      row.getCell(col).alignment = { horizontal: 'right', vertical: 'middle' };
     });
     row.getCell(1).alignment = { horizontal: 'center', vertical: 'middle' };
     row.getCell(2).alignment = { horizontal: 'center', vertical: 'middle' };
     row.getCell(4).alignment = { wrapText: true, vertical: 'middle' };
   }
 
-  // 5. Cập nhật TỔNG CỘNG (bây giờ ở row DATA_START + n)
+  // ── 5. TỔNG CỘNG (row DATA_START + n) ────────────────────────────────────────
   const totalRowIdx = DATA_START + n;
   const totalRow    = ws.getRow(totalRowIdx);
+  // Xóa giá trị formula cũ trong merged range A:E (để tránh hiển thị placeholder)
+  for (let c = 2; c <= 5; c++) totalRow.getCell(c).value = null;
   totalRow.getCell(6).value = tongCD;
   totalRow.getCell(7).value = tongPL;
   totalRow.getCell(8).value = '';
   totalRow.getCell(9).value = tongCD + tongPL;
   [6, 7, 9].forEach(col => {
-    const c = totalRow.getCell(col);
-    c.numFmt    = '#,##0';
-    c.alignment = { horizontal: 'right', vertical: 'middle' };
+    totalRow.getCell(col).numFmt    = '#,##0';
+    totalRow.getCell(col).alignment = { horizontal: 'right', vertical: 'middle' };
   });
 
-  // 6. Cập nhật BẰNG CHỮ (row DATA_START + n + 1)
-  // Template: C1='BẰNG CHỮ', C6=giá trị chữ (cột F, không phải B)
-  const bangChuRow = ws.getRow(totalRowIdx + 1);
+  // ── 6. BẰNG CHỮ (row DATA_START + n + 1) ─────────────────────────────────────
+  // Template: C1='BẰNG CHỮ', C6=giá trị (F16:L16 merged)
+  const bangChuRowIdx = totalRowIdx + 1;
+  const bangChuRow    = ws.getRow(bangChuRowIdx);
+  for (let c = 2; c <= 5; c++) bangChuRow.getCell(c).value = null;  // clear merged cells
+  for (let c = 7; c <= 12; c++) bangChuRow.getCell(c).value = null; // clear F16:L16 rest
   bangChuRow.getCell(6).value = soThanhChu(tongCD + tongPL);
+
+  // ── 7. Xoá formula helper rows (R23-R28 gốc, nay ở R16+n) ───────────────────
+  // Đây là các row chuyển số→chữ của MS Forms, không cần trong output
+  const formulaStart = 16 + n;
+  const rowsToDelete = ws.rowCount - formulaStart + 1;
+  if (rowsToDelete > 0) ws.spliceRows(formulaStart, rowsToDelete);
+
+  // ── 8. Restore merged cells (spliceRows phá vỡ merges) ───────────────────────
+  // Xóa tất cả merge hiện tại (có thể bị shift sai)
+  Object.keys(ws._merges || {}).forEach(r => { try { ws.unMergeCells(r); } catch {} });
+
+  // Re-apply merges với vị trí đã điều chỉnh
+  // Rows >= DATA_START(8) bị dịch: new_row = old_row - TEMPLATE_DATA_COUNT + n
+  const SHIFT = n - TEMPLATE_DATA_COUNT; // = n - 7
+  savedMerges.forEach(mergeStr => {
+    const m = mergeStr.match(/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/);
+    if (!m) return;
+    const [, c1, r1str, c2, r2str] = m;
+    let row1 = parseInt(r1str), row2 = parseInt(r2str);
+    if (row1 >= DATA_START) {
+      row1 += SHIFT;
+      row2 += SHIFT;
+    }
+    // Bỏ qua merges trong vùng formula helper (đã xóa)
+    if (row1 >= formulaStart + SHIFT) return;
+    if (row1 < 1 || row2 < 1) return;
+    try { ws.mergeCells(`${c1}${row1}:${c2}${row2}`); } catch {}
+  });
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }
